@@ -1,0 +1,63 @@
+﻿# ================================
+# Muhammed AI - Git Ignore
+# ================================
+
+# Secrets / API Keys
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.secret
+secrets/
+credentials/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Local AI memory / user data
+memory/
+workspace/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Test/runtime output
+test*_output.txt
+*.tmp
+
+# Build/cache
+build/
+dist/
+cache/
+.cache/
+tmp/
+temp/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Backup files
+*.bak

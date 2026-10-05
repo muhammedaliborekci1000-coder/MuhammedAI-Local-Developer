@@ -1,0 +1,110 @@
+def project_overview(self) -> str:
+
+    tree = self.scanner.get_tree()
+
+    structure_results = (
+        self.structure_analyzer.analyze()
+    )
+
+    structure = (
+        self.structure_analyzer.format_results(
+            structure_results
+        )
+    )
+
+    prompt = (
+        "Sen MuhammedAI Local Developer'sın.\n\n"
+
+        "Görevin Python projesini gerçek dosya "
+        "yapısından analiz etmektir.\n\n"
+
+        "PROJE DOSYA AĞACI:\n"
+        f"{tree}\n\n"
+
+        "PYTHON YAPISAL ANALİZİ:\n"
+        f"{structure}\n\n"
+
+        "ÇOK ÖNEMLİ KURALLAR:\n"
+
+        "1. Dosya ağacı ve Python yapısal analizinde "
+        "verilen bilgileri gerçek kabul et.\n"
+
+        "2. Dosya ağacında veya yapısal analizde "
+        "olmayan dosya, sınıf, fonksiyon veya modül "
+        "uydurma.\n"
+
+        "3. Bir sınıf veya fonksiyon yapısal analizde "
+        "listeleniyorsa gerçekten mevcut kabul et.\n"
+
+        "4. Bir dosyanın iç davranışı yapısal analizde "
+        "görülmüyorsa davranışı hakkında kesin iddia "
+        "etme.\n"
+
+        "5. Import listesinde bulunan modüllerin "
+        "kullanıldığını söyleyebilirsin; ancak nasıl "
+        "kullanıldığını kaynak kodu görülmeden kesin "
+        "olarak açıklama.\n"
+
+        "6. Dosya adından yapılan tahminleri kesin "
+        "bilgi olarak sunma.\n"
+
+        "7. Yapısal analizde olmayan sınıf veya "
+        "fonksiyon isimlerini üretme.\n"
+
+        "8. Bilinmeyen bilgileri açıkça "
+        "'BİLİNMİYOR' olarak belirt.\n"
+
+        "9. Kodda hiçbir değişiklik yapma.\n"
+
+        "10. Tahmin ile doğrulanmış bilgiyi birbirinden "
+        "açıkça ayır.\n\n"
+
+        "ANALİZ FORMATı:\n\n"
+
+        "1. PROJE YAPISI\n"
+        "Projenin klasörlerini ve genel dosya "
+        "organizasyonunu açıkla.\n\n"
+
+        "2. AGENT MİMARİSİ\n"
+        "Gerçekten bulunan agent sınıflarını ve "
+        "ilgili dosyaları listele.\n\n"
+
+        "3. AI VE MODEL KATMANI\n"
+        "Gerçekten bulunan AI/model dosyalarını, "
+        "sınıflarını ve aralarındaki görünen "
+        "import bağlantılarını açıkla.\n\n"
+
+        "4. CORE KATMANI\n"
+        "core klasöründeki gerçek sınıf ve fonksiyonları "
+        "listele.\n\n"
+
+        "5. MEMORY KATMANI\n"
+        "memory klasöründeki gerçek sınıfları ve "
+        "fonksiyonları listele.\n\n"
+
+        "6. TOOL KATMANI\n"
+        "tools klasöründeki gerçek sınıfları ve "
+        "fonksiyonları listele.\n\n"
+
+        "7. GUI\n"
+        "GUI dosyasında yapısal olarak görülen sınıf "
+        "ve fonksiyonları belirt.\n\n"
+
+        "8. TESTLER\n"
+        "Test dosyasındaki gerçek TestSuite sınıfını "
+        "ve test fonksiyonlarını belirt.\n\n"
+
+        "9. MODÜL BAĞLANTILARI\n"
+        "Import verilerine dayanarak görülebilen "
+        "modül bağlantılarını açıkla.\n\n"
+
+        "10. BİLİNMEYENLER\n"
+        "Sadece AST ve dosya ağacı ile belirlenemeyen "
+        "davranışları belirt.\n\n"
+
+        "SON KURAL:\n"
+        "Kaynak kodunun davranışını görmediğin yerde "
+        "kesin konuşma. Gerçek yapısal veriyi kullan."
+    )
+
+    return self.ai.chat(prompt)

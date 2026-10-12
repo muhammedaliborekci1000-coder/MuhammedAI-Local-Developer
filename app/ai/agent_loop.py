@@ -11,6 +11,10 @@ from app.ai.ollama_client import OllamaClient
 from app.ai.tool_parser import ToolParser, ToolCall, ParseResult
 from app.ai.conversation_memory import ConversationMemory
 from app.ai.change_orchestrator import ChangeOrchestrator
+from app.ai.memory import MemorySystem
+from app.ai.agent_session import AgentSession, SessionStatus
+from app.ai.agent_context_builder import AgentContextBuilder
+from app.ai.project_rules import ProjectRules
 from app.tools.tool_registry import ToolRegistry
 from app.core.config import PROJECT_ROOT
 
@@ -22,6 +26,7 @@ class LoopConfig:
     max_tool_output_length: int = 2000  # Karakter cinsinden
     enable_logging: bool = True
     max_no_tool_retries: int = 2  # Tool çağrısı olmadığında maksimum yeniden deneme sayısı
+    max_correction_attempts: int = 3  # Maksimum correction deneme sayısı
 
 
 @dataclass
@@ -77,6 +82,21 @@ class AgentLoop:
             approval_callback=approval_callback
         )
 
+        # AgentSession ve ContextBuilder
+        self.session: Optional[AgentSession] = None
+        self.codebase_index = getattr(self.registry, 'codebase_index', None)
+        self.memory_system = MemorySystem()
+        self.project_rules = ProjectRules()
+        self.context_builder = AgentContextBuilder(
+            max_recent_messages=self.config.max_recent_messages if hasattr(self.config, 'max_recent_messages') else 10,
+            max_tool_history=self.config.max_tool_history if hasattr(self.config, 'max_tool_history') else 5,
+            max_test_history=self.config.max_test_history if hasattr(self.config, 'max_test_history') else 3,
+            max_context_chars=self.config.max_context_chars if hasattr(self.config, 'max_context_chars') else 10000,
+            codebase_index=self.codebase_index,
+            memory_system=self.memory_system,
+            project_rules=self.project_rules
+        )
+
         # Logger
         self.logger = logging.getLogger(__name__)
         if self.config.enable_logging:
@@ -87,6 +107,10 @@ class AgentLoop:
 
         # Duplicate tracking: (tool_name, frozenset(arguments.items())) -> (count, last_result)
         self._call_history: Dict[tuple, tuple] = {}
+
+        # Correction loop tracking
+        self._correction_history: List[Dict[str, Any]] = []
+        self._correction_attempt: int = 0
 
     def _truncate_tool_output(self, output: Any) -> str:
         """
@@ -238,7 +262,8 @@ class AgentLoop:
 
     def _execute_tool_call(
         self,
-        tool_call: ToolCall
+        tool_call: ToolCall,
+        iteration: int = 0
     ) -> Dict[str, Any]:
         """
         Tool çağrısını güvenli şekilde çalıştırır.
@@ -266,11 +291,13 @@ class AgentLoop:
             if cached_result is not None:
                 # Cached sonuç var, onu döndür
                 self._update_call_history(tool_call, cached_result)
+                # Orchestration bilgisini koru
                 return {
                     "success": cached_result.get("success", False),
                     "cached": True,
                     "result": cached_result,
-                    "message": duplicate_message
+                    "message": duplicate_message,
+                    **{k: v for k, v in cached_result.items() if k not in ["success", "result"]}
                 }
             else:
                 # 2 kez başarısız oldu, hata döndür
@@ -365,6 +392,91 @@ class AgentLoop:
                                     else "failed"
                                 ),
                             }
+
+                            # apply_change çağrısını tool_call_log'a ekle
+                            log_entry = {
+                                "iteration": iteration,
+                                "tool": "apply_change",
+                                "arguments": {
+                                    "plan": result_data.get("plan"),
+                                    "test_file": test_file,
+                                    "approved": True
+                                },
+                                "result": apply_result
+                            }
+                            self.tool_call_log.append(log_entry)
+
+                            # Test başarısız mı? Correction loop başlat
+                            if not apply_result.get("success"):
+                                # Maksimum deneme sınırını kontrol et (artırma öncesi)
+                                if self._correction_attempt >= self.config.max_correction_attempts:
+                                    # Maksimum deneme aşıldı, durdur
+                                    failure = {
+                                        "success": False,
+                                        "error": f"Maksimum correction deneme sayısı aşıldı ({self.config.max_correction_attempts}). Son deneme başarısız oldu.",
+                                        "correction_history": self._correction_history,
+                                        "orchestration": {
+                                            "state": self.change_orchestrator.get_state(),
+                                            "approval": "approved",
+                                            "apply_change": "failed",
+                                            "max_attempts_reached": True
+                                        }
+                                    }
+                                    self._update_call_history(tool_call, failure)
+                                    return failure
+
+                                # Sayaç artır
+                                self._correction_attempt += 1
+
+                                # Correction history'e ekle
+                                correction_entry = {
+                                    "attempt": self._correction_attempt,
+                                    "test_file": test_file,
+                                    "test_result": apply_result.get("test"),
+                                    "test_failure_details": apply_result.get("test_failure_details"),
+                                    "plan": result_data.get("plan"),
+                                    "approval": "approved",
+                                    "success": False
+                                }
+                                self._correction_history.append(correction_entry)
+
+                                # Orchestrator'ı correction için hazırla
+                                self.change_orchestrator.reset_for_correction()
+
+                                # Test failure details'ı agent context'ine ekle
+                                failure_details = apply_result.get("test_failure_details", {})
+                                error_context = f"""
+Test başarısız oldu (Deneme {self._correction_attempt}/{self.config.max_correction_attempts}):
+Test dosyası: {test_file}
+Hata: {failure_details.get('error', 'Bilinmeyen hata')}
+Stdout: {failure_details.get('stdout', '')}
+Stderr: {failure_details.get('stderr', '')}
+Return code: {failure_details.get('returncode', '')}
+
+Lütfen hatayı analiz edip yeni bir düzeltme planı oluşturun.
+"""
+                                self.memory.add_system_message(error_context)
+
+                                # apply_change sonucunu döndür ama correction devam etsin
+                                apply_result["correction_history"] = self._correction_history
+                                apply_result["correction_attempt"] = self._correction_attempt
+                                self._update_call_history(tool_call, apply_result)
+                                return apply_result
+                            else:
+                                # Test başarılı, correction history'ye ekle
+                                if self._correction_attempt > 0:
+                                    correction_entry = {
+                                        "attempt": self._correction_attempt,
+                                        "test_file": test_file,
+                                        "test_result": apply_result.get("test"),
+                                        "plan": result_data.get("plan"),
+                                        "approval": "approved",
+                                        "success": True
+                                    }
+                                    self._correction_history.append(correction_entry)
+                                    apply_result["correction_history"] = self._correction_history
+                                    apply_result["correction_attempt"] = self._correction_attempt
+
                             # apply_change sonucunu döndür
                             self._update_call_history(tool_call, apply_result)
                             return apply_result
@@ -380,6 +492,20 @@ class AgentLoop:
                                     "apply_change": "not_started",
                                 },
                             }
+
+                            # Correction history'ye ekle (onay reddedildi)
+                            if self._correction_attempt > 0:
+                                correction_entry = {
+                                    "attempt": self._correction_attempt,
+                                    "test_file": test_file,
+                                    "plan": result_data.get("plan"),
+                                    "approval": "rejected",
+                                    "success": False
+                                }
+                                self._correction_history.append(correction_entry)
+                                failure["correction_history"] = self._correction_history
+                                failure["correction_attempt"] = self._correction_attempt
+
                             self._update_call_history(tool_call, failure)
                             return failure
                     else:
@@ -491,7 +617,7 @@ ARAÇ KULLANIM KURALLARI:
    Yukarıdaki şemada belirtilen parametreleri kesinlikle takip edin.
 
 3. DOSYA YOLLARI İÇİN ÖZEL KURALLAR:
-   - Dosya yollarında mutlaka forward slash (/) kullanın, backslash (\) kullanmayın.
+   - Dosya yollarında mutlaka forward slash (/) kullanın, backslash (\\) kullanmayın.
    - Dosya yollarında asla boşluk kullanmayın.
    - Directory ve dosya isimlerini tam ve doğru yazın, kısaltma veya typo yapmayın.
    - Örnek doğru format: "quality_tests/e2e_workspace/agent_task.py"
@@ -560,7 +686,7 @@ ARAÇ KULLANIM KURALLARI:
         return prompt
 
     def _requires_file_operation(self, user_task: str) -> bool:
-        """
+        r"""
         Kullanıcı görevinin dosya okuma veya inceleme gerektirip gerektirmediğini tespit eder.
 
         Args:
@@ -607,6 +733,8 @@ ARAÇ KULLANIM KURALLARI:
         # İstatistikleri sıfırla
         self.tool_call_log.clear()
         self._call_history.clear()
+        self._correction_history.clear()
+        self._correction_attempt = 0
 
         iteration = 0
         final_response = ""
@@ -709,7 +837,7 @@ ARAÇ KULLANIM KURALLARI:
                 self.logger.info(f"Tool çağrılıyor: {tool_call.name}")
 
                 try:
-                    result = self._execute_tool_call(tool_call)
+                    result = self._execute_tool_call(tool_call, iteration)
                 except Exception as exc:
                     result = {
                         "success": False,
@@ -725,6 +853,19 @@ ARAÇ KULLANIM KURALLARI:
                     "result": result
                 }
                 self.tool_call_log.append(log_entry)
+
+                # Maksimum deneme aşıldı mı? Döngüyü durdur
+                if result.get("orchestration", {}).get("max_attempts_reached"):
+                    self.logger.warning("Maksimum correction deneme sayısı aşıldı. Döngü durduruluyor.")
+                    # Sonucu memory'ye ekle
+                    truncated_result = self._truncate_tool_output(result)
+                    self.memory.add_tool_result(
+                        tool_call.name,
+                        truncated_result,
+                        result.get("success", False)
+                    )
+                    # Döngüyü durdur
+                    break
 
                 # Sonucu kırp ve memory'ye ekle
                 truncated_result = self._truncate_tool_output(result)

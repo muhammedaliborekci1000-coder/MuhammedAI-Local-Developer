@@ -15,7 +15,8 @@ class OrchestratorState(Enum):
     WAITING_FOR_USER_APPROVAL = "WAITING_FOR_USER_APPROVAL"
     APPLY = "APPLY"
     COMPLETE = "COMPLETE"
-    REJECTED = "REJECTED"
+    REJECTED = "REJECTED"  # Kullanıcı reddi
+    APPLY_FAILED = "APPLY_FAILED"  # Test başarısızlığı
 
 
 class ChangeOrchestrator:
@@ -62,6 +63,23 @@ class ChangeOrchestrator:
         self._current_plan = None
         self._state = OrchestratorState.ANALYZE
         self._approval_result = None
+
+    def reset_for_correction(self) -> None:
+        """
+        Correction loop için orchestrator'ı hazırla.
+
+        Sadece APPLY_FAILED durumunda çalışır ve state'i ANALYZE yaparak
+        yeni plan oluşturulmasına izin verir.
+        """
+        if self._state == OrchestratorState.APPLY_FAILED:
+            self._current_plan = None
+            self._state = OrchestratorState.ANALYZE
+            self._approval_result = None
+            self.logger.info("Correction için orchestrator sıfırlandı. Durum: ANALYZE")
+        else:
+            self.logger.warning(
+                f"reset_for_correction yanlış durumda çağrıldı: {self._state.value}"
+            )
 
     def create_plan(
         self,
@@ -174,6 +192,8 @@ class ChangeOrchestrator:
         Returns:
             apply_change sonucu
         """
+        self.logger.info(f"apply_change çağrıldı. State: {self._state.value}, test_file: {test_file}")
+
         if self._state != OrchestratorState.APPLY:
             error_msg = f"apply_change yanlış durumda çağrıldı: {self._state.value}"
             self.logger.warning(error_msg)
@@ -201,18 +221,22 @@ class ChangeOrchestrator:
                 "error": error_msg
             }
         
+        self.logger.info(f"Değişiklik uygulanıyor. Plan: {self._current_plan.get('file')}")
+
         # Değişikliği uygula (approved=True - orkestratör onayını doğruladı)
         result = self.workflow.apply_change(
             plan=self._current_plan,
             test_file=test_file,
             approved=True  # Yalnızca orkestratör doğrulaması ile
         )
-        
+
+        self.logger.info(f"apply_change sonucu: success={result.get('success')}")
+
         if result.get("success"):
             self._state = OrchestratorState.COMPLETE
             self.logger.info("Değişiklik başarıyla uygulandı. Durum: COMPLETE")
         else:
-            self._state = OrchestratorState.REJECTED
+            self._state = OrchestratorState.APPLY_FAILED
             self.logger.warning(f"Değişiklik başarısız: {result.get('error')}")
         
         return result

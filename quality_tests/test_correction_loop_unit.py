@@ -83,10 +83,10 @@ def test_add():
 
     # OllamaClient.chat mock - dummy yanıt döndür
     chat_call_count = [0]
-    def mock_chat(self, message, response_format=None):
+    def mock_chat(self, message, response_format=None, tools=None):
         chat_call_count[0] += 1
         print(f"Mock chat (count={chat_call_count[0]})")
-        return "Processing request..."
+        return {"content": "Processing request...", "tool_calls": None}
 
     # ToolParser.parse mock - kontrollü ToolCall nesneleri döndür
     parse_count = [0]
@@ -313,10 +313,10 @@ def test_add():
 
     # OllamaClient.chat mock
     chat_call_count = [0]
-    def mock_chat(self, message, response_format=None):
+    def mock_chat(self, message, response_format=None, tools=None):
         chat_call_count[0] += 1
         print(f"Mock chat (count={chat_call_count[0]})")
-        return "Processing request..."
+        return {"content": "Processing request...", "tool_calls": None}
 
     # ToolParser.parse mock
     parse_count = [0]
@@ -515,10 +515,10 @@ def test_add():
 
     # OllamaClient.chat mock - dummy yanıt döndür
     chat_call_count = [0]
-    def mock_chat(self, message, response_format=None):
+    def mock_chat(self, message, response_format=None, tools=None):
         chat_call_count[0] += 1
         print(f"Mock chat (count={chat_call_count[0]})")
-        return "Processing request..."
+        return {"content": "Processing request...", "tool_calls": None}
 
     # ToolParser.parse mock - her zaman create_change_plan döndür
     parse_count = [0]

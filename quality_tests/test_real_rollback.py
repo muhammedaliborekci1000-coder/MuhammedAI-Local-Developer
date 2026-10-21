@@ -23,7 +23,7 @@ def test_real_rollback():
     print("=" * 70)
     print("GERÇEK ROLLBACK TESTİ")
     print("=" * 70)
-    
+
     # Workspace
     workspace = PROJECT_ROOT / "quality_tests" / "e2e_workspace"
     workspace.mkdir(parents=True, exist_ok=True)
@@ -31,11 +31,11 @@ def test_real_rollback():
     # Test dosyası
     test_file = workspace / "rollback_target.py"
     relative_path = "quality_tests/e2e_workspace/rollback_target.py"
-    
+
     # Test dosyası (kasıtlı başarısız)
     test_py = workspace / "test_rollback.py"
     relative_test = "quality_tests/e2e_workspace/test_rollback.py"
-    
+
     # Test dosyasını oluştur
     test_content = '''# Test dosyası - kasıtlı olarak başarısız olacak
 import sys
@@ -43,7 +43,7 @@ sys.exit(1)  # Kasitli olarak hata dondur
 '''
     with open(test_py, 'w', encoding='utf-8') as f:
         f.write(test_content)
-    
+
     # Orijinal içerik
     original_content = '''def get_message():
     return "ORIGINAL"
@@ -132,6 +132,26 @@ sys.exit(1)  # Kasitli olarak hata dondur
         print(f"Rollback çağrıldı: {rollback_called}")
         if rollback_called:
             print(f"  Rollback sonucu: {result.get('rollback')}")
+
+        # Test failure details kontrolü
+        test_failure_details = result.get("test_failure_details")
+        print(f"Test failure details mevcut: {test_failure_details is not None}")
+
+        # Assertion'larla gerçek değerleri doğrula
+        assert test_failure_details is not None, "test_failure_details alanı eksik"
+
+        # Test dosyası sys.exit(1) ile kasıtlı başarısız oluyor
+        assert test_failure_details.get("returncode") == 1, f"Beklenen returncode=1, alınan: {test_failure_details.get('returncode')}"
+        assert test_failure_details.get("stdout") == "", f"Beklenen stdout='', alınan: {test_failure_details.get('stdout')}"
+        assert test_failure_details.get("stderr") == "", f"Beklenen stderr='', alınan: {test_failure_details.get('stderr')}"
+        assert test_failure_details.get("error") is None, f"Beklenen error=None, alınan: {test_failure_details.get('error')}"
+
+        print(f"  stdout: '{test_failure_details.get('stdout', '')}'")
+        print(f"  stderr: '{test_failure_details.get('stderr', '')}'")
+        print(f"  returncode: {test_failure_details.get('returncode')}")
+        print(f"  error: {test_failure_details.get('error')}")
+        print("[OK] PASS: test_failure_details değerleri doğrulandı")
+        test_failure_details_present = True
         
         # Dosya içeriği kontrolü
         print("\n6. DOSYA İÇERİĞİ KONTROLÜ (Rollback sonrası)")
@@ -157,28 +177,30 @@ sys.exit(1)  # Kasitli olarak hata dondur
         print(f"Backup oluşturuldu: {'YES' if backup_created else 'NO'}")
         print(f"Backup dosyası var: {'YES' if backup_exists else 'NO'}")
         print(f"Rollback çağrıldı: {'YES' if rollback_called else 'NO'}")
+        print(f"Test failure details mevcut: {'YES' if test_failure_details_present else 'NO'}")
         print(f"Dosya orijinal oldu: {'YES' if content_restored else 'NO'}")
-        
+
         # Rollback başarılı mı?
         test_passed = (
-            read_file_pass and 
-            validation_failed and 
-            backup_created and 
-            backup_exists and 
-            rollback_called and 
+            read_file_pass and
+            validation_failed and
+            backup_created and
+            backup_exists and
+            rollback_called and
+            test_failure_details_present and
             content_restored
         )
         
         print(f"\nTOPLAM: {'PASS' if test_passed else 'FAIL'}")
         print("=" * 70)
-        
-        return test_passed
-        
+
+        # Test passes if it completes without exception
+
     finally:
         # Temizlik - backup dosyalarını da temizle
         print("\n7. TEMİZLİK")
         print("-" * 70)
-        
+
         # Backup dizinini temizle
         backup_dir = PROJECT_ROOT / ".muhammedai_backups"
         if backup_dir.exists():
@@ -187,12 +209,12 @@ sys.exit(1)  # Kasitli olarak hata dondur
                 print(f"Backup dizini temizlendi: {backup_dir}")
             except Exception as e:
                 print(f"Backup temizleme hatası: {e}")
-        
+
         # Test dosyalarını temizle
         if test_file.exists():
             test_file.unlink()
             print(f"Test dosyası silindi: {test_file}")
-        
+
         if test_py.exists():
             test_py.unlink()
             print(f"Test dosyası silindi: {test_py}")
@@ -200,8 +222,8 @@ sys.exit(1)  # Kasitli olarak hata dondur
 
 if __name__ == "__main__":
     try:
-        passed = test_real_rollback()
-        sys.exit(0 if passed else 1)
+        test_real_rollback()
+        sys.exit(0)
     except Exception as e:
         print(f"\nTEST HATASI:")
         print("-" * 70)

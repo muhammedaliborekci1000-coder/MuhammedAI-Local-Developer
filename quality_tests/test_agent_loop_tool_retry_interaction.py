@@ -244,8 +244,8 @@ def test_tool_call_does_not_trigger_no_tool_retry():
     else:
         print("TEST SONUCU: FAIL")
     print("=" * 70)
-    
-    return passed
+
+    assert passed
 
 
 if __name__ == "__main__":

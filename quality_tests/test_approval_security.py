@@ -83,8 +83,8 @@ def test_registry_approval_security():
     else:
         print("TEST 6A SONUCU: FAIL")
     print("=" * 70)
-    
-    return passed
+
+    assert passed
 
 
 def test_agent_loop_approval_callback():
@@ -170,8 +170,8 @@ def test_agent_loop_approval_callback():
     else:
         print("TEST 6B SONUCU: FAIL")
     print("=" * 70)
-    
-    return passed
+
+    assert passed
 
 
 def test_file_not_changed():
@@ -219,8 +219,8 @@ def test_file_not_changed():
         else:
             print("TEST 6C SONUCU: FAIL")
         print("=" * 70)
-        
-        return passed
+
+        assert passed
         
     finally:
         # Temizlik

@@ -12,6 +12,7 @@ from app.ai.change_orchestrator import ChangeOrchestrator, OrchestratorState
 from app.tools.change_workflow import ChangeWorkflow
 from app.tools.tool_registry import ToolRegistry
 from app.core.config import PROJECT_ROOT
+from quality_tests.fake_change_workflow import FakeChangeWorkflow
 
 
 def setup_test_files():
@@ -55,7 +56,7 @@ def test_a_approval_true():
             return True
         
         # Orkestratör
-        workflow = ChangeWorkflow()
+        workflow = FakeChangeWorkflow()
         orchestrator = ChangeOrchestrator(workflow, approval_callback)
         
         # Plan oluştur
@@ -100,10 +101,10 @@ def test_a_approval_true():
             )
             
             print(f"\nTEST A: {'PASS' if success else 'FAIL'}")
-            return success
+            assert success
         else:
             print("TEST A: FAIL (onay alınamadı)")
-            return False
+            assert False
             
     except Exception as exc:
         print(f"TEST A HATASI: {exc}")
@@ -133,7 +134,7 @@ def test_b_approval_false():
             return False
         
         # Orkestratör
-        workflow = ChangeWorkflow()
+        workflow = FakeChangeWorkflow()
         orchestrator = ChangeOrchestrator(workflow, approval_callback)
         
         # Plan oluştur
@@ -163,13 +164,13 @@ def test_b_approval_false():
         )
         
         print(f"\nTEST B: {'PASS' if success else 'FAIL'}")
-        return success
-        
+        assert success
+
     except Exception as exc:
         print(f"TEST B HATASI: {exc}")
         import traceback
         traceback.print_exc()
-        return False
+        assert False
     finally:
         cleanup_test_files()
 
@@ -188,7 +189,7 @@ def test_c_no_callback():
     
     try:
         # Callback yok
-        workflow = ChangeWorkflow()
+        workflow = FakeChangeWorkflow()
         orchestrator = ChangeOrchestrator(workflow, approval_callback=None)
         
         # Plan oluştur
@@ -218,13 +219,13 @@ def test_c_no_callback():
         )
         
         print(f"\nTEST C: {'PASS' if success else 'FAIL'}")
-        return success
-        
+        assert success
+
     except Exception as exc:
         print(f"TEST C HATASI: {exc}")
         import traceback
         traceback.print_exc()
-        return False
+        assert False
     finally:
         cleanup_test_files()
 
@@ -246,7 +247,7 @@ def test_d_callback_exception():
         def approval_callback(tool_name, arguments):
             raise Exception("Test exception")
         
-        workflow = ChangeWorkflow()
+        workflow = FakeChangeWorkflow()
         orchestrator = ChangeOrchestrator(workflow, approval_callback)
         
         # Plan oluştur
@@ -276,13 +277,13 @@ def test_d_callback_exception():
         )
         
         print(f"\nTEST D: {'PASS' if success else 'FAIL'}")
-        return success
-        
+        assert success
+
     except Exception as exc:
         print(f"TEST D HATASI: {exc}")
         import traceback
         traceback.print_exc()
-        return False
+        assert False
     finally:
         cleanup_test_files()
 
@@ -304,7 +305,7 @@ def test_e_missing_test_file():
         def approval_callback(tool_name, arguments):
             return True
         
-        workflow = ChangeWorkflow()
+        workflow = FakeChangeWorkflow()
         orchestrator = ChangeOrchestrator(workflow, approval_callback)
         
         # Plan oluştur
@@ -340,13 +341,13 @@ def test_e_missing_test_file():
         )
         
         print(f"\nTEST G: {'PASS' if success else 'FAIL'}")
-        return success
-        
+        assert success
+
     except Exception as exc:
         print(f"TEST G HATASI: {exc}")
         import traceback
         traceback.print_exc()
-        return False
+        assert False
     finally:
         cleanup_test_files()
 

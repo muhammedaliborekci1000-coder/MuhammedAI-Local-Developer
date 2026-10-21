@@ -83,6 +83,12 @@ class SafeChangeManager:
         new_code: str,
         test_file: str,
     ) -> dict:
+        import logging
+        logger = logging.getLogger(__name__)
+
+        logger.info(f"apply_patch_and_test çağrıldı: file_path={file_path}, test_file={test_file}")
+        logger.info(f"old_code (repr): {repr(old_code)}")
+        logger.info(f"new_code (repr): {repr(new_code)}")
 
         result = {
             "success": False,
@@ -177,10 +183,16 @@ class SafeChangeManager:
             result["test"] = test_result
 
             if not test_result.get("success"):
-
+                # Test başarısız olduğunda detaylı bilgi agent context'ine ekle
                 result["error"] = (
                     "Test başarısız oldu."
                 )
+                result["test_failure_details"] = {
+                    "stdout": test_result.get("stdout", ""),
+                    "stderr": test_result.get("stderr", ""),
+                    "returncode": test_result.get("returncode"),
+                    "error": test_result.get("error"),
+                }
 
                 self._rollback(
                     file_path,

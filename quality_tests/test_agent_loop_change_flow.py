@@ -98,7 +98,6 @@ def test_rejected_plan_is_recorded_as_failure_and_never_applied():
         arguments={
             "file_path": "target.py",
             "problem": "change return value",
-            "test_file": "test_target.py",
         },
         raw_text="",
     )
@@ -127,7 +126,6 @@ def test_invalid_plan_does_not_request_approval_or_apply():
         arguments={
             "file_path": "target.py",
             "problem": "change return value",
-            "test_file": "test_target.py",
         },
         raw_text="",
     )
@@ -135,6 +133,6 @@ def test_invalid_plan_does_not_request_approval_or_apply():
     result = agent._execute_tool_call(call)
 
     assert result["success"] is False
-    assert "doğrulamadan" in result["error"]
+    assert "validation" in result["error"].lower() or "doğrulamadan" in result["error"]
     assert approval_calls == []
     assert workflow.apply_calls == []

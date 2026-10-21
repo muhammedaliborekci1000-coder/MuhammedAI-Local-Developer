@@ -37,6 +37,8 @@ logs/
 # Local AI memory / user data
 memory/
 workspace/
+.muhammedai/
+.muhammedai_backups/
 
 # Local databases
 *.db

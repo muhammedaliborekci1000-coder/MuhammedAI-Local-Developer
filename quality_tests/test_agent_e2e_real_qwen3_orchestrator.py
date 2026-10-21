@@ -4,6 +4,7 @@ Tests real Qwen3 model with deterministic orchestration
 """
 import sys
 import os
+import pytest
 from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -36,6 +37,7 @@ def cleanup_test_files():
         shutil.rmtree(workspace)
 
 
+@pytest.mark.slow
 def test_h_real_qwen3_approval_true():
     """
     TEST H — Gerçek Qwen3:4B (approval=True)
@@ -153,24 +155,17 @@ def test_h_real_qwen3_approval_true():
 
         print(f"\nTEST H: {'PASS' if success else 'FAIL'}")
         assert success, "Qwen3 değişiklik akışı beklenen şekilde tamamlanmadı."
-        return success, {
-            'iterations': result.iterations,
-            'tool_calls': len(result.tool_calls),
-            'approval_calls': len(approval_log),
-            'file_changed': file_changed,
-            'backup_created': backup_created,
-            'final_content': final_content
-        }
         
     except Exception as exc:
         print(f"\nTEST H HATASI: {exc}")
         import traceback
         traceback.print_exc()
-        return False, {}
+        raise
     finally:
         cleanup_test_files()
 
 
+@pytest.mark.slow
 def test_h_real_qwen3_approval_false():
     """
     TEST H — Gerçek Qwen3:4B (approval=False)
@@ -271,44 +266,27 @@ def test_h_real_qwen3_approval_false():
 
         print(f"\nTEST H (approval=False): {'PASS' if success else 'FAIL'}")
         assert success, "Onay reddedildiğinde değişiklik engellenmeliydi."
-        return success, {
-            'iterations': result.iterations,
-            'tool_calls': len(result.tool_calls),
-            'approval_calls': len(approval_log),
-            'file_unchanged': file_unchanged,
-            'final_content': final_content
-        }
         
     except Exception as exc:
         print(f"\nTEST H (approval=False) HATASI: {exc}")
         import traceback
         traceback.print_exc()
-        return False, {}
+        raise
     finally:
         cleanup_test_files()
 
 
 if __name__ == "__main__":
     # TEST H (approval=True)
-    success_true, details_true = test_h_real_qwen3_approval_true()
+    test_h_real_qwen3_approval_true()
     
     # TEST H (approval=False)
-    success_false, details_false = test_h_real_qwen3_approval_false()
+    test_h_real_qwen3_approval_false()
     
     # Özet
     print("\n\n")
     print("=" * 70)
     print("GENEL ÖZET")
     print("=" * 70)
-    print(f"\nTEST H (approval=True): {'PASS' if success_true else 'FAIL'}")
-    print(f"  Iterations: {details_true.get('iterations')}")
-    print(f"  Tool calls: {details_true.get('tool_calls')}")
-    print(f"  Approval calls: {details_true.get('approval_calls')}")
-    print(f"  File changed: {details_true.get('file_changed')}")
-    print(f"  Backup created: {details_true.get('backup_created')}")
-    
-    print(f"\nTEST H (approval=False): {'PASS' if success_false else 'FAIL'}")
-    print(f"  Iterations: {details_false.get('iterations')}")
-    print(f"  Tool calls: {details_false.get('tool_calls')}")
-    print(f"  Approval calls: {details_false.get('approval_calls')}")
-    print(f"  File unchanged: {details_false.get('file_unchanged')}")
+    print("Tüm testler PASS")
+    print("=" * 70)

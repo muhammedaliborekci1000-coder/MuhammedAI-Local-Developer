@@ -115,10 +115,10 @@ def test_add():
 
     # Mock'lar - deterministiklik için
     chat_call_count = [0]
-    def mock_chat(self, message, response_format=None):
+    def mock_chat(self, message, response_format=None, tools=None):
         chat_call_count[0] += 1
         print(f"Mock chat (count={chat_call_count[0]})")
-        return "Processing request..."
+        return {"content": "Processing request...", "tool_calls": None}
 
     parse_count = [0]
     def mock_parse(self, ai_response):
@@ -358,10 +358,10 @@ def test_add():
 
     # Mock'lar
     chat_call_count = [0]
-    def mock_chat(self, message, response_format=None):
+    def mock_chat(self, message, response_format=None, tools=None):
         chat_call_count[0] += 1
         print(f"Mock chat (count={chat_call_count[0]})")
-        return "Processing request..."
+        return {"content": "Processing request...", "tool_calls": None}
 
     parse_count = [0]
     def mock_parse(self, ai_response):
@@ -574,10 +574,10 @@ def test_add():
 
     # Mock'lar
     chat_call_count = [0]
-    def mock_chat(self, message, response_format=None):
+    def mock_chat(self, message, response_format=None, tools=None):
         chat_call_count[0] += 1
         print(f"Mock chat (count={chat_call_count[0]})")
-        return "Processing request..."
+        return {"content": "Processing request...", "tool_calls": None}
 
     parse_count = [0]
     def mock_parse(self, ai_response):

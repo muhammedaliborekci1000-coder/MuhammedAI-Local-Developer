@@ -5,7 +5,7 @@ AI ile kullanıcı arasındaki mesaj geçmişini yönetir.
 
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, UTC
 
 
 @dataclass
@@ -13,7 +13,7 @@ class Message:
     """Tekil mesaj."""
     role: str  # "user", "assistant", "tool"
     content: str
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -73,9 +73,12 @@ class ConversationMemory:
         """Kullanıcı mesajı ekler."""
         self.add_message("user", content)
 
-    def add_assistant_message(self, content: str) -> None:
+    def add_assistant_message(self, content: str, tool_calls=None) -> None:
         """AI asistan mesajı ekler."""
-        self.add_message("assistant", content)
+        metadata = {}
+        if tool_calls:
+            metadata["tool_calls"] = tool_calls
+        self.add_message("assistant", content, metadata=metadata)
 
     def add_tool_result(
         self,
@@ -106,8 +109,18 @@ class ConversationMemory:
         )
 
     def add_system_message(self, content: str) -> None:
-        """Sistem mesajı ekler."""
-        self.add_message("system", content)
+        """Sistem mesajı ekler. System mesajları limit dışında tutulur."""
+        if not content or not isinstance(content, str):
+            raise ValueError("Content geçerli bir string olmalıdır.")
+        
+        message = Message(
+            role="system",
+            content=content,
+            metadata={"skip_limits": True}  # System mesajları limit dışında
+        )
+        
+        # System mesajları en başa ekle (öncelikli)
+        self.messages.insert(0, message)
 
     def get_messages(self) -> List[Dict[str, str]]:
         """
@@ -144,19 +157,33 @@ class ConversationMemory:
         self.messages.clear()
 
     def _apply_limits(self) -> None:
-        """Mesaj limitlerini uygular."""
-        # Mesaj sayısı limiti
-        if len(self.messages) > self.max_messages:
-            # En eski mesajları sil
-            self.messages = self.messages[-self.max_messages:]
+        """Mesaj limitlerini uygular. System mesajları limit dışında tutulur."""
+        # System mesajlarını hariç tutarak mesaj sayısı limiti
+        non_system_messages = [msg for msg in self.messages if not msg.metadata.get("skip_limits")]
+        if len(non_system_messages) > self.max_messages:
+            # En eski non-system mesajları sil
+            system_messages = [msg for msg in self.messages if msg.metadata.get("skip_limits")]
+            non_system_messages = non_system_messages[-self.max_messages:]
+            self.messages = system_messages + non_system_messages
 
-        # Token/karakter limiti (yaklaşık)
-        total_chars = sum(len(msg.content) for msg in self.messages)
-        if total_chars > self.max_tokens:
-            # En eski mesajlardan başlayarak sil
-            while total_chars > self.max_tokens and len(self.messages) > 1:
-                removed = self.messages.pop(0)
-                total_chars -= len(removed.content)
+        # Token/karakter limiti (yaklaşık) - system mesajları hariç
+        non_system_chars = sum(len(msg.content) for msg in self.messages if not msg.metadata.get("skip_limits"))
+        if non_system_chars > self.max_tokens:
+            # En eski non-system mesajlardan başlayarak sil
+            system_messages = [msg for msg in self.messages if msg.metadata.get("skip_limits")]
+            non_system_messages = [msg for msg in self.messages if not msg.metadata.get("skip_limits")]
+            
+            # Karakter limitini aşmayan kadar mesaj tut
+            total = 0
+            kept_messages = []
+            for msg in reversed(non_system_messages):
+                if total + len(msg.content) <= self.max_tokens:
+                    kept_messages.insert(0, msg)
+                    total += len(msg.content)
+                else:
+                    break
+            
+            self.messages = system_messages + kept_messages
 
     def get_stats(self) -> Dict[str, Any]:
         """

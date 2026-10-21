@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional, Dict, Any
 
 from app.core.config import (
     PROJECT_ROOT,
@@ -33,8 +34,25 @@ class FileReader:
 
         return full_path
 
-    def read(self, relative_path: str) -> str:
-        """Proje içindeki bir metin dosyasını okur."""
+    def read(self, relative_path: str, offset: int = 0, limit: Optional[int] = None) -> Any:
+        """
+        Proje içindeki bir metin dosyasını okur.
+
+        Args:
+            relative_path: Dosya yolu
+            offset: Başlangıç satırı (0-indexed, varsayılan 0)
+            limit: Okunacak maksimum satır sayısı (None = tüm dosya)
+
+        Returns:
+            Any: 
+            - offset=0 ve limit=None (varsayılan): str (dosya içeriği)
+            - offset>0 veya limit belirtilmişse: Dict[str, Any] with metadata
+                - content: Dosya içeriği
+                - total_lines: Toplam satır sayısı
+                - read_lines: Okunan satır sayısı
+                - offset: Başlangıç satırı
+                - truncated: Kesilmiş mi (True/False)
+        """
 
         path = self._validate_path(relative_path)
 
@@ -49,10 +67,35 @@ class FileReader:
             )
 
         try:
-            return path.read_text(
+            content = path.read_text(
                 encoding="utf-8-sig",  # BOM'u otomatik kaldırır
                 errors="replace",
             )
+
+            # Satır bazlı okuma
+            lines = content.splitlines()
+            total_lines = len(lines)
+
+            # Offset ve limit uygula
+            if offset > 0 or limit is not None:
+                end = offset + limit if limit is not None else None
+                lines = lines[offset:end]
+                content = "\n".join(lines)
+
+                # truncated: Dosyanın sonuna ulaşılmadı mı?
+                # offset + read_lines < total_lines ise truncated = True
+                truncated = (offset + len(lines)) < total_lines
+
+                return {
+                    "content": content,
+                    "total_lines": total_lines,
+                    "read_lines": len(lines),
+                    "offset": offset,
+                    "truncated": truncated
+                }
+            else:
+                # Varsayılan davranış: string döndür (backward compatibility)
+                return "\n".join(lines)
         except OSError as exc:
             raise OSError(
                 f"Dosya okunamadı: {relative_path}"

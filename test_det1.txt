@@ -1,0 +1,105 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 1 item
+
+quality_tests/test_correction_loop_deterministic.py::test_correction_fail_then_success 
+======================================================================
+TEST 1 ÔÇö Ba┼şar─▒s─▒zl─▒ktan Sonra Ba┼şar─▒l─▒ D├╝zeltme
+======================================================================
+
+Sonu├ğ:
+Success: False
+Error: Bu g├Ârev dosya okuma gerektiriyor ancak tool ├ğa─şr─▒s─▒ yap─▒lmad─▒. Dosya i├ğeri─şini tahmin edemiyorum. L├╝tfen g├Ârevi netle┼ştirin.
+Approval count: 0
+Correction attempt counter: 0
+Correction history length: 0
+FAILED
+
+================================== FAILURES ===================================
+______________________ test_correction_fail_then_success ______________________
+
+workspace = WindowsPath('C:/Users/N─░TRO16/Desktop/MuhammedAI-Local-Developer/quality_tests/correction_workspace')
+
+    def test_correction_fail_then_success(workspace):
+        """
+        TEST 1 ÔÇö Ba┼şar─▒s─▒zl─▒ktan sonra ba┼şar─▒l─▒ d├╝zeltme
+        Senaryo:
+        1. ─░lk de─şi┼şiklik testte ba┼şar─▒s─▒z olur
+        2. Failure details agent'a aktar─▒l─▒r
+        3. ─░kinci d├╝zeltme plan─▒ olu┼şturulur
+        4. ─░kinci deneme ba┼şar─▒l─▒ olur
+        """
+        print("\n" + "=" * 70)
+        print("TEST 1 ÔÇö Ba┼şar─▒s─▒zl─▒ktan Sonra Ba┼şar─▒l─▒ D├╝zeltme")
+        print("=" * 70)
+    
+        # Setup files
+        calculator_file = workspace / "calculator.py"
+        original_code = 'def add(a, b):\n    return a - b\n'
+        with open(calculator_file, 'w', encoding='utf-8') as f:
+            f.write(original_code)
+    
+        test_file = workspace / "test_calculator.py"
+        test_code = 'def test_add():\n    assert add(2, 3) == 5\n'
+        with open(test_file, 'w', encoding='utf-8') as f:
+            f.write(test_code)
+    
+        relative_calc = str(calculator_file.relative_to(PROJECT_ROOT))
+        relative_test = str(test_file.relative_to(PROJECT_ROOT))
+    
+        # Mock responses
+        # Response 1: First correction attempt (will fail test)
+        response1 = f"""{{"tool": "apply_change", "arguments": {{"file_path": "{relative_calc}", "old_code": "def add(a, b):\\n    return a - b", "new_code": "def add(a, b):\\n    return a * b", "test_file": "{relative_test}"}}}}"""
+    
+        # Response 2: Second correction attempt (will pass test)
+        response2 = f"""{{"tool": "apply_change", "arguments": {{"file_path": "{relative_calc}", "old_code": "def add(a, b):\\n    return a - b", "new_code": "def add(a, b):\\n    return a + b", "test_file": "{relative_test}"}}}}"""
+    
+        mock_client = MockOllamaClient([response1, response2])
+    
+        tool_registry = ToolRegistry()
+        config = LoopConfig(
+            max_iterations=10,
+            max_correction_attempts=3,
+            enable_logging=False
+        )
+    
+        approval_count = [0]
+        def approval_callback(tool_name, arguments):
+            approval_count[0] += 1
+            return True
+    
+        agent_loop = AgentLoop(
+            ollama_client=mock_client,
+            tool_registry=tool_registry,
+            config=config,
+            approval_callback=approval_callback
+        )
+    
+        user_task = f"Fix the add function in {relative_calc}. Use {relative_test} to verify."
+        result = agent_loop.run(user_task)
+    
+        print(f"\nSonu├ğ:")
+        print(f"Success: {result.success}")
+        print(f"Error: {result.error}")
+        print(f"Approval count: {approval_count[0]}")
+        print(f"Correction attempt counter: {agent_loop._correction_attempt}")
+        print(f"Correction history length: {len(agent_loop._correction_history)}")
+    
+        # Verify correction loop was triggered
+>       assert agent_loop._correction_attempt > 0, "Correction loop ba┼şlat─▒lmad─▒"
+E       AssertionError: Correction loop ba┼şlat─▒lmad─▒
+E       assert 0 > 0
+E        +  where 0 = <app.ai.agent_loop.AgentLoop object at 0x00000233F1C3E270>._correction_attempt
+
+quality_tests\test_correction_loop_deterministic.py:114: AssertionError
+------------------------------ Captured log call ------------------------------
+WARNING  app.ai.agent_loop:agent_loop.py:786 Tool ├ğa─şr─▒s─▒ yok, dosya i┼şlemi gerekli. Yeniden deneme 1/2
+WARNING  app.ai.agent_loop:agent_loop.py:786 Tool ├ğa─şr─▒s─▒ yok, dosya i┼şlemi gerekli. Yeniden deneme 2/2
+ERROR    app.ai.agent_loop:agent_loop.py:802 Bu g├Ârev dosya okuma gerektiriyor ancak tool ├ğa─şr─▒s─▒ yap─▒lmad─▒. Dosya i├ğeri─şini tahmin edemiyorum. L├╝tfen g├Ârevi netle┼ştirin.
+=========================== short test summary info ===========================
+FAILED quality_tests/test_correction_loop_deterministic.py::test_correction_fail_then_success
+============================== 1 failed in 0.71s ==============================

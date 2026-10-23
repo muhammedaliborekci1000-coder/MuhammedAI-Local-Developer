@@ -1,0 +1,78 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 3 items
+
+quality_tests/test_correction_loop.py::test_correction_successful 
+======================================================================
+TEST A ÔÇö Ba┼şar─▒l─▒ Correction
+======================================================================
+
+Calculator dosyas─▒: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace\calculator.py
+Test dosyas─▒: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace\test_calculator.py
+Orijinal kod:
+def add(a, b):
+    return a - b
+
+
+G├Ârev: L├╝tfen quality_tests\correction_workspace\calculator.py dosyas─▒ndaki add fonksiyonunu d├╝zeltin. 
+┼Şu anda return a - b yap─▒yor ama return a + b olmal─▒.
+quality_tests\correction_workspace\test_calculator.py test dosyas─▒n─▒ kullanarak de─şi┼şikli─şi do─şrulay─▒n.
+----------------------------------------------------------------------
+Approval: run_python_file -> APPROVED
+Approval: apply_change -> APPROVED
+
+AgentLoop sonucu:
+Success: True
+Error: None
+Iterations: 4
+Tool calls: 6
+
+Son kod:
+def add(a, b):
+    return a + b
+
+
+Tekrar test sonucu:
+Success: True
+Returncode: 0
+Stdout: 
+Stderr: 
+
+======================================================================
+TEST A: PASS
+======================================================================
+
+Workspace temizlendi: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace
+PASSED
+quality_tests/test_correction_loop.py::test_correction_approval_rejected 
+======================================================================
+TEST B ÔÇö Correction Approval Reddedildi
+======================================================================
+
+AgentLoop sonucu:
+Success: True
+Error: None
+
+======================================================================
+TEST B: PASS
+======================================================================
+PASSED
+quality_tests/test_correction_loop.py::test_correction_max_attempts 
+======================================================================
+TEST C ÔÇö Maksimum Correction
+======================================================================
+
+AgentLoop sonucu:
+Success: True
+Error: None
+
+======================================================================
+TEST C: PASS
+======================================================================
+PASSED
+
+======================== 3 passed in 616.82s (0:10:16) ========================

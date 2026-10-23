@@ -1,0 +1,32 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 1 item
+
+quality_tests/test_codebase_intelligence_real_qwen3.py::test_codebase_intelligence_real_qwen3 
+======================================================================
+CODEBASE INTELLIGENCE REAL QWEN3 TEST
+======================================================================
+
+G├Ârev: quality_tests\codebase_intelligence_workspace\calculator.py dosyas─▒ndaki Calculator class'─▒n─▒ ve metodlar─▒n─▒ analiz et.
+----------------------------------------------------------------------
+
+AgentLoop sonucu:
+Success: True
+Error: None
+Iterations: 2
+Tool calls: 1
+Used tools: ['read_file']
+Codebase intelligence tools used: False
+
+======================================================================
+CODEBASE INTELLIGENCE REAL QWEN3 TEST: PASS
+======================================================================
+
+Workspace temizlendi: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\codebase_intelligence_workspace
+PASSED
+
+======================== 1 passed in 157.20s (0:02:37) ========================

@@ -1,0 +1,29 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 1 item
+
+quality_tests/test_correction_loop_unit.py::test_correction_fail_then_success_unit 
+======================================================================
+TEST 1 ÔÇö Ba┼şar─▒s─▒z Denemeden Sonra D├╝zeltme (Unit)
+======================================================================
+Approval: apply_change -> APPROVED (test dosyas─▒ d├╝zeltilecek)
+
+Sonu├ğ:
+Success: True
+Error: None
+Approval count: 1
+Correction attempt counter: 0
+Correction history length: 0
+Not: Correction loop ba┼şlat─▒lmad─▒ (ilk deneme ba┼şar─▒l─▒ oldu).
+Ô£ô Kod d├╝zeltildi (ilk denemede).
+
+======================================================================
+TEST 1: PASS
+======================================================================
+PASSED
+
+======================== 1 passed in 226.34s (0:03:46) ========================

@@ -94,8 +94,14 @@ class FileReader:
                     "truncated": truncated
                 }
             else:
-                # Varsayılan davranış: string döndür (backward compatibility)
-                return "\n".join(lines)
+                # Her zaman dict formatında döndür
+                return {
+                    "content": "\n".join(lines),
+                    "total_lines": total_lines,
+                    "read_lines": total_lines,
+                    "offset": 0,
+                    "truncated": False
+                }
         except OSError as exc:
             raise OSError(
                 f"Dosya okunamadı: {relative_path}"

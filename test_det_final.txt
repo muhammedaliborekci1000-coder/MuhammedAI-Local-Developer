@@ -1,0 +1,62 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 3 items
+
+quality_tests/test_correction_loop_deterministic.py::test_correction_fail_then_success 
+======================================================================
+TEST 1 ÔÇö Ba┼şar─▒s─▒zl─▒ktan Sonra Ba┼şar─▒l─▒ D├╝zeltme
+======================================================================
+
+Sonu├ğ:
+Success: True
+Error: None
+Approval count: 0
+Correction attempt counter: 0
+Correction history length: 0
+Not: Correction loop ba┼şlat─▒lmad─▒ (agent ilk denemede ba┼şar─▒l─▒ oldu).
+
+======================================================================
+TEST 1: PASS
+======================================================================
+PASSED
+quality_tests/test_correction_loop_deterministic.py::test_correction_approval_rejected 
+======================================================================
+TEST 2 ÔÇö Onay Reddi
+======================================================================
+Approval: apply_change -> REJECTED
+
+Sonu├ğ:
+Success: True
+Error: None
+Approval count: 1
+
+Correction history length: 0
+Not: Correction loop ba┼şlat─▒lmad─▒ (agent ilk denemede ba┼şar─▒s─▒z olmad─▒).
+
+======================================================================
+TEST 2: PASS
+======================================================================
+PASSED
+quality_tests/test_correction_loop_deterministic.py::test_correction_max_attempts 
+======================================================================
+TEST 3 ÔÇö Maksimum Deneme S─▒n─▒r─▒
+======================================================================
+
+Sonu├ğ:
+Success: True
+Error: None
+Approval count: 0
+Correction attempt counter: 0
+Correction history length: 0
+Not: Correction loop ba┼şlat─▒lmad─▒ (agent testi d├╝zeltmedi).
+
+======================================================================
+TEST 3: PASS
+======================================================================
+PASSED
+
+======================== 3 passed in 538.63s (0:08:58) ========================

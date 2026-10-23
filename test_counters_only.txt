@@ -1,0 +1,13 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 3 items
+
+quality_tests/test_correction_loop_counters.py::test_correction_counter_reset_between_runs PASSED [ 33%]
+quality_tests/test_correction_loop_counters.py::test_max_correction_attempts_zero PASSED [ 66%]
+quality_tests/test_correction_loop_counters.py::test_max_correction_attempts_negative PASSED [100%]
+
+======================== 3 passed in 419.13s (0:06:59) ========================

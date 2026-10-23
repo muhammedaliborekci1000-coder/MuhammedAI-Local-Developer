@@ -1,0 +1,189 @@
+﻿........................................................................ [ 30%]
+.................F...................................................... [ 60%]
+........................................................................ [ 90%]
+.......................                                                  [100%]
+================================== FAILURES ===================================
+_________________________ test_correction_successful __________________________
+
+    @pytest.mark.slow
+    def test_correction_successful():
+        """
+        TEST A ÔÇö Ba┼şar─▒l─▒ correction
+        Ba┼şlang─▒├ğ: add(a, b) returns a - b (hatal─▒)
+        Test: assert add(2, 3) == 5
+        Beklenen: Initial FAIL ÔåÆ rollback ÔåÆ correction ÔåÆ PASS
+        """
+        print("\n" + "=" * 70)
+        print("TEST A ÔÇö Ba┼şar─▒l─▒ Correction")
+        print("=" * 70)
+    
+        workspace = PROJECT_ROOT / "quality_tests" / "correction_workspace"
+        workspace.mkdir(parents=True, exist_ok=True)
+    
+        try:
+            # Ba┼şlang─▒├ğ kodu (hatal─▒)
+            calculator_file = workspace / "calculator.py"
+            original_code = 'def add(a, b):\n    return a - b\n'
+            with open(calculator_file, 'w', encoding='utf-8') as f:
+                f.write(original_code)
+    
+            # Test dosyas─▒
+            test_file = workspace / "test_calculator.py"
+            test_code = 'def test_add():\n    assert add(2, 3) == 5\n'
+            with open(test_file, 'w', encoding='utf-8') as f:
+                f.write(test_code)
+    
+            print(f"\nCalculator dosyas─▒: {calculator_file}")
+            print(f"Test dosyas─▒: {test_file}")
+            print(f"Orijinal kod:\n{original_code}")
+    
+            # Relative path hesapla
+            relative_calc = str(calculator_file.relative_to(PROJECT_ROOT))
+            relative_test = str(test_file.relative_to(PROJECT_ROOT))
+    
+            # AgentLoop olu┼ştur
+            ollama_client = OllamaClient()
+            tool_registry = ToolRegistry()
+            config = LoopConfig(
+                max_iterations=10,
+                enable_logging=True
+            )
+    
+            # Approval callback - her zaman onay ver
+            def approval_callback(tool_name, arguments):
+                print(f"Approval: {tool_name} -> APPROVED")
+                return True
+    
+            agent_loop = AgentLoop(
+                ollama_client=ollama_client,
+                tool_registry=tool_registry,
+                config=config,
+                approval_callback=approval_callback
+            )
+    
+            # G├Ârev
+            user_task = f"{relative_calc} dosyas─▒ndaki problemi d├╝zelt ve {relative_test} testini ba┼şar─▒yla ge├ğir."
+    
+            print(f"\nG├Ârev: {user_task}")
+            print("-" * 70)
+    
+            # AgentLoop'u ├ğal─▒┼şt─▒r
+            result = agent_loop.run(user_task)
+    
+            print(f"\nAgentLoop sonucu:")
+            print(f"Success: {result.success}")
+            print(f"Error: {result.error}")
+            print(f"Iterations: {result.iterations}")
+            print(f"Tool calls: {len(result.tool_calls)}")
+    
+            # Son dosyay─▒ kontrol et
+            with open(calculator_file, 'r', encoding='utf-8') as f:
+                final_code = f.read()
+    
+            print(f"\nSon kod:\n{final_code}")
+    
+            # Do─şrulamalar
+>           assert "return a + b" in final_code or "return a+b" in final_code, "Kod d├╝zeltilmedi"
+E           AssertionError: Kod d├╝zeltilmedi
+E           assert ('return a + b' in 'def add(a, b):\n    return a - b\n' or 'return a+b' in 'def add(a, b):\n    return a - b\n')
+
+quality_tests\test_correction_loop.py:98: AssertionError
+---------------------------- Captured stdout call -----------------------------
+
+======================================================================
+TEST A ÔÇö Ba┼şar─▒l─▒ Correction
+======================================================================
+
+Calculator dosyas─▒: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace\calculator.py
+Test dosyas─▒: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace\test_calculator.py
+Orijinal kod:
+def add(a, b):
+    return a - b
+
+
+G├Ârev: quality_tests\correction_workspace\calculator.py dosyas─▒ndaki problemi d├╝zelt ve quality_tests\correction_workspace\test_calculator.py testini ba┼şar─▒yla ge├ğir.
+----------------------------------------------------------------------
+INFO app.ai.agent_loop:654 Iteration 1/10
+DEBUG httpcore.connection:47 connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
+DEBUG httpcore.connection:47 connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x00000239CAB805D0>
+DEBUG httpcore.http11:47 send_request_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_headers.complete
+DEBUG httpcore.http11:47 send_request_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_body.complete
+DEBUG httpcore.http11:47 receive_response_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Fri, 09 Oct 2026 22:36:47 GMT'), (b'Transfer-Encoding', b'chunked')])
+INFO httpx:1025 HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+DEBUG httpcore.http11:47 receive_response_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_body.complete
+DEBUG httpcore.http11:47 response_closed.started
+DEBUG httpcore.http11:47 response_closed.complete
+INFO app.ai.agent_loop:745 Tool ├ğa─şr─▒l─▒yor: read_file
+INFO app.ai.agent_loop:745 Tool ├ğa─şr─▒l─▒yor: read_file
+INFO app.ai.agent_loop:745 Tool ├ğa─şr─▒l─▒yor: read_file
+INFO app.ai.agent_loop:654 Iteration 2/10
+DEBUG httpcore.http11:47 send_request_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_headers.complete
+DEBUG httpcore.http11:47 send_request_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_body.complete
+DEBUG httpcore.http11:47 receive_response_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Fri, 09 Oct 2026 22:38:13 GMT'), (b'Transfer-Encoding', b'chunked')])
+INFO httpx:1025 HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+DEBUG httpcore.http11:47 receive_response_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_body.complete
+DEBUG httpcore.http11:47 response_closed.started
+DEBUG httpcore.http11:47 response_closed.complete
+INFO app.ai.agent_loop:725 Tool ├ğa─şr─▒s─▒ yok, d├Âng├╝ tamamland─▒.
+
+AgentLoop sonucu:
+Success: True
+Error: None
+Iterations: 2
+Tool calls: 3
+
+Son kod:
+def add(a, b):
+    return a - b
+
+
+Workspace temizlendi: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace
+------------------------------ Captured log call ------------------------------
+INFO     app.ai.agent_loop:agent_loop.py:654 Iteration 1/10
+DEBUG    httpcore.connection:_trace.py:47 connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
+DEBUG    httpcore.connection:_trace.py:47 connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x00000239CAB805D0>
+DEBUG    httpcore.http11:_trace.py:47 send_request_headers.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 send_request_headers.complete
+DEBUG    httpcore.http11:_trace.py:47 send_request_body.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 send_request_body.complete
+DEBUG    httpcore.http11:_trace.py:47 receive_response_headers.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Fri, 09 Oct 2026 22:36:47 GMT'), (b'Transfer-Encoding', b'chunked')])
+INFO     httpx:_client.py:1025 HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+DEBUG    httpcore.http11:_trace.py:47 receive_response_body.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 receive_response_body.complete
+DEBUG    httpcore.http11:_trace.py:47 response_closed.started
+DEBUG    httpcore.http11:_trace.py:47 response_closed.complete
+INFO     app.ai.agent_loop:agent_loop.py:745 Tool ├ğa─şr─▒l─▒yor: read_file
+INFO     app.ai.agent_loop:agent_loop.py:745 Tool ├ğa─şr─▒l─▒yor: read_file
+INFO     app.ai.agent_loop:agent_loop.py:745 Tool ├ğa─şr─▒l─▒yor: read_file
+INFO     app.ai.agent_loop:agent_loop.py:654 Iteration 2/10
+DEBUG    httpcore.http11:_trace.py:47 send_request_headers.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 send_request_headers.complete
+DEBUG    httpcore.http11:_trace.py:47 send_request_body.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 send_request_body.complete
+DEBUG    httpcore.http11:_trace.py:47 receive_response_headers.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Fri, 09 Oct 2026 22:38:13 GMT'), (b'Transfer-Encoding', b'chunked')])
+INFO     httpx:_client.py:1025 HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+DEBUG    httpcore.http11:_trace.py:47 receive_response_body.started request=<Request [b'POST']>
+DEBUG    httpcore.http11:_trace.py:47 receive_response_body.complete
+DEBUG    httpcore.http11:_trace.py:47 response_closed.started
+DEBUG    httpcore.http11:_trace.py:47 response_closed.complete
+INFO     app.ai.agent_loop:agent_loop.py:725 Tool ├ğa─şr─▒s─▒ yok, d├Âng├╝ tamamland─▒.
+============================== warnings summary ===============================
+app/test_developer_integration.py: 1 warning
+quality_tests/test_codebase_intelligence.py: 16 warnings
+  C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\app\ai\agent_loop.py:600: SyntaxWarning: "\)" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\)"? A raw string is also an option.
+    Kullan─▒c─▒ g├Ârevinin dosya okuma veya inceleme gerektirip gerektirmedi─şini tespit eder.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED quality_tests/test_correction_loop.py::test_correction_successful - As...
+1 failed, 238 passed, 17 warnings in 2104.24s (0:35:04)

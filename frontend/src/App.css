@@ -1,0 +1,31 @@
+.app {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #1e1e1e;
+}
+
+.editor-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #858585;
+}
+
+.placeholder-icon {
+  margin-bottom: 20px;
+  opacity: 0.3;
+}
+
+.placeholder-text h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #d4d4d4;
+}
+
+.placeholder-text p {
+  font-size: 14px;
+}

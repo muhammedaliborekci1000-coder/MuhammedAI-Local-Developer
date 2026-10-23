@@ -3,8 +3,10 @@ MuhammedAI Local Developer - Tool Registry
 Aktif proje araçlarının merkezi kayıt ve çalıştırma katmanı.
 """
 
-from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, Optional, List
+from datetime import datetime
+from collections import defaultdict
 
 from app.tools.project_scanner import ProjectScanner
 from app.tools.project_structure_analyzer import ProjectStructureAnalyzer
@@ -34,6 +36,24 @@ class ToolDefinition:
     handler: Callable[..., Any]
     requires_approval: bool = False
     category: str = "general"
+    enabled: bool = True
+    usage_count: int = 0
+    last_used: Optional[datetime] = None
+    avg_execution_time: float = 0.0
+    success_rate: float = 1.0
+    total_executions: int = 0
+    failed_executions: int = 0
+
+
+@dataclass
+class ToolExecution:
+    """Tool çalıştırma kaydı."""
+    tool_name: str
+    timestamp: datetime
+    duration: float
+    success: bool
+    error: Optional[str] = None
+    parameters: Optional[Dict[str, Any]] = None
 
 
 class ToolRegistry:
@@ -45,10 +65,14 @@ class ToolRegistry:
     - AI'ya tanıtır
     - çalıştırır
     - onay gerektiren işlemleri engeller
+    - kullanım istatistiklerini takip eder
+    - performans metriklerini izler
     """
 
     def __init__(self):
         self.tools: Dict[str, ToolDefinition] = {}
+        self.execution_history: List[ToolExecution] = []
+        self.max_history_size = 1000
 
         self.scanner = ProjectScanner()
         self.structure_analyzer = ProjectStructureAnalyzer()
@@ -899,6 +923,312 @@ class ToolRegistry:
             "risk_level": result.risk_level.value if result.risk_level else None,
             "approval_required": result.approval_required,
         }
+    
+    # ---------------------------------------------------------
+    # Enhanced Tool System Features
+    # ---------------------------------------------------------
+    
+    def execute_tool(
+        self,
+        tool_name: str,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Tool çalıştır ve istatistikleri güncelle.
+        
+        Args:
+            tool_name: Tool adı
+            **kwargs: Tool parametreleri
+            
+        Returns:
+            Dict: Tool sonucu
+        """
+        tool = self.get(tool_name)
+        if not tool:
+            return {
+                "error": f"Tool not found: {tool_name}",
+                "success": False
+            }
+        
+        if not tool.enabled:
+            return {
+                "error": f"Tool is disabled: {tool_name}",
+                "success": False
+            }
+        
+        start_time = datetime.now()
+        success = True
+        error = None
+        result = None
+        
+        try:
+            result = tool.handler(**kwargs)
+        except Exception as e:
+            success = False
+            error = str(e)
+            result = {"error": error}
+        
+        duration = (datetime.now() - start_time).total_seconds()
+        
+        # İstatistikleri güncelle
+        tool.usage_count += 1
+        tool.last_used = datetime.now()
+        tool.total_executions += 1
+        
+        if not success:
+            tool.failed_executions += 1
+        
+        # Average execution time güncelle
+        if tool.total_executions > 0:
+            tool.avg_execution_time = (
+                (tool.avg_execution_time * (tool.total_executions - 1) + duration) / 
+                tool.total_executions
+            )
+        
+        # Success rate güncelle
+        if tool.total_executions > 0:
+            tool.success_rate = (tool.total_executions - tool.failed_executions) / tool.total_executions
+        
+        # Execution history'e ekle
+        execution = ToolExecution(
+            tool_name=tool_name,
+            timestamp=datetime.now(),
+            duration=duration,
+            success=success,
+            error=error,
+            parameters=kwargs
+        )
+        
+        self.execution_history.append(execution)
+        
+        # History size limit
+        if len(self.execution_history) > self.max_history_size:
+            self.execution_history = self.execution_history[-self.max_history_size:]
+        
+        return result
+    
+    def enable_tool(self, tool_name: str) -> bool:
+        """
+        Tool'ı aktif et.
+        
+        Args:
+            tool_name: Tool adı
+            
+        Returns:
+            bool: Başarılı mı
+        """
+        tool = self.get(tool_name)
+        if tool:
+            tool.enabled = True
+            return True
+        return False
+    
+    def disable_tool(self, tool_name: str) -> bool:
+        """
+        Tool'ı pasif et.
+        
+        Args:
+            tool_name: Tool adı
+            
+        Returns:
+            bool: Başarılı mı
+        """
+        tool = self.get(tool_name)
+        if tool:
+            tool.enabled = False
+            return True
+        return False
+    
+    def get_tool_analytics(self) -> Dict[str, Any]:
+        """
+        Tool analytics al.
+        
+        Returns:
+            Dict: Analytics verileri
+        """
+        total_tools = len(self.tools)
+        enabled_tools = sum(1 for t in self.tools.values() if t.enabled)
+        disabled_tools = total_tools - enabled_tools
+        
+        category_counts = defaultdict(int)
+        total_usage = 0
+        total_executions = 0
+        total_failures = 0
+        
+        for tool in self.tools.values():
+            category_counts[tool.category] += 1
+            total_usage += tool.usage_count
+            total_executions += tool.total_executions
+            total_failures += tool.failed_executions
+        
+        avg_success_rate = 0.0
+        if total_executions > 0:
+            avg_success_rate = (total_executions - total_failures) / total_executions
+        
+        return {
+            "total_tools": total_tools,
+            "enabled_tools": enabled_tools,
+            "disabled_tools": disabled_tools,
+            "category_counts": dict(category_counts),
+            "total_usage": total_usage,
+            "total_executions": total_executions,
+            "total_failures": total_failures,
+            "avg_success_rate": round(avg_success_rate, 2),
+            "execution_history_size": len(self.execution_history)
+        }
+    
+    def get_tool_performance(self, tool_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Tool performans metriklerini al.
+        
+        Args:
+            tool_name: Tool adı
+            
+        Returns:
+            Optional[Dict]: Performans metrikleri
+        """
+        tool = self.get(tool_name)
+        if not tool:
+            return None
+        
+        return {
+            "name": tool.name,
+            "usage_count": tool.usage_count,
+            "last_used": tool.last_used.isoformat() if tool.last_used else None,
+            "avg_execution_time": round(tool.avg_execution_time, 3),
+            "success_rate": round(tool.success_rate, 2),
+            "total_executions": tool.total_executions,
+            "failed_executions": tool.failed_executions,
+            "enabled": tool.enabled
+        }
+    
+    def get_execution_history(
+        self,
+        tool_name: Optional[str] = None,
+        limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        """
+        Execution history al.
+        
+        Args:
+            tool_name: Tool filtresi (opsiyonel)
+            limit: Maksimum sonuç
+            
+        Returns:
+            List[Dict]: Execution kayıtları
+        """
+        history = self.execution_history
+        
+        if tool_name:
+            history = [e for e in history if e.tool_name == tool_name]
+        
+        history = history[-limit:]
+        
+        return [
+            {
+                "tool_name": e.tool_name,
+                "timestamp": e.timestamp.isoformat(),
+                "duration": round(e.duration, 3),
+                "success": e.success,
+                "error": e.error,
+                "parameters": e.parameters
+            }
+            for e in history
+        ]
+    
+    def validate_tool(self, tool_name: str) -> Dict[str, Any]:
+        """
+        Tool validasyonu.
+        
+        Args:
+            tool_name: Tool adı
+            
+        Returns:
+            Dict: Validasyon sonucu
+        """
+        tool = self.get(tool_name)
+        if not tool:
+            return {
+                "valid": False,
+                "error": f"Tool not found: {tool_name}"
+            }
+        
+        result = {
+            "valid": True,
+            "errors": [],
+            "warnings": []
+        }
+        
+        # Handler callable kontrolü
+        if not callable(tool.handler):
+            result["valid"] = False
+            result["errors"].append("Handler is not callable")
+        
+        # Description kontrolü
+        if not tool.description or not tool.description.strip():
+            result["warnings"].append("Description is empty")
+        
+        # Success rate kontrolü
+        if tool.total_executions > 10 and tool.success_rate < 0.5:
+            result["warnings"].append(f"Low success rate: {tool.success_rate:.2f}")
+        
+        return result
+    
+    def get_most_used_tools(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        En çok kullanılan tool'ları al.
+        
+        Args:
+            limit: Maksimum sonuç
+            
+        Returns:
+            List[Dict]: Tool listesi
+        """
+        sorted_tools = sorted(
+            self.tools.values(),
+            key=lambda t: t.usage_count,
+            reverse=True
+        )
+        
+        return [
+            {
+                "name": t.name,
+                "usage_count": t.usage_count,
+                "category": t.category
+            }
+            for t in sorted_tools[:limit]
+        ]
+    
+    def get_slowest_tools(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        En yavaş tool'ları al.
+        
+        Args:
+            limit: Maksimum sonuç
+            
+        Returns:
+            List[Dict]: Tool listesi
+        """
+        tools_with_executions = [
+            t for t in self.tools.values()
+            if t.total_executions > 0
+        ]
+        
+        sorted_tools = sorted(
+            tools_with_executions,
+            key=lambda t: t.avg_execution_time,
+            reverse=True
+        )
+        
+        return [
+            {
+                "name": t.name,
+                "avg_execution_time": round(t.avg_execution_time, 3),
+                "total_executions": t.total_executions
+            }
+            for t in sorted_tools[:limit]
+        ]
+
 
     def execute(
         self,

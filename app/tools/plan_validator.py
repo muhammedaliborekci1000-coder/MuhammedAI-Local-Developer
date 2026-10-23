@@ -182,6 +182,12 @@ class PlanValidator:
             source_code = self.reader.read(
                 file_path
             )
+            
+            # FileReader her zaman dict döndürür, content alanını al
+            if isinstance(source_code, dict):
+                content = source_code.get('content')
+                # Content None veya boş ise güvenli olarak boş string kullan
+                source_code = content if content is not None else ''
 
         except Exception as exc:
             result["errors"].append(
@@ -217,6 +223,7 @@ class PlanValidator:
                         f"Corrected old_code beklenmedik şekilde {occurrences} kez bulundu."
                     )
                     return result
+            else:
                 # No unique normalized match found
                 result["errors"].append(
                     f"old_code hedef dosyada bulunamadı. Expected: {repr(old_code[:100])}... "

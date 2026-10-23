@@ -17,6 +17,12 @@ class ChangePlanner:
     ) -> dict:
 
         source_code = self.reader.read(file_path)
+        
+        # FileReader her zaman dict döndürür, content alanını al
+        if isinstance(source_code, dict):
+            content = source_code.get('content')
+            # Content None veya boş ise güvenli olarak boş string kullan
+            source_code = content if content is not None else ''
 
         schema = {
             "type": "object",

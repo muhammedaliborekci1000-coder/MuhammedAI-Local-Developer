@@ -1,0 +1,38 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 1 item
+
+quality_tests/test_memory_rules_real_qwen3.py::test_memory_rules_real_qwen3 
+======================================================================
+MEMORY AND RULES REAL QWEN3 TEST
+======================================================================
+
+G├Ârev: quality_tests\memory_rules_workspace\simple.py dosyas─▒n─▒ oku ve projenin kurallar─▒na g├Âre analiz et.
+----------------------------------------------------------------------
+
+AgentLoop sonucu:
+Success: True
+Error: None
+Iterations: 3
+Tool calls: 2
+Used tools: ['read_file', 'detect_errors']
+
+======================================================================
+MEMORY AND RULES REAL QWEN3 TEST: PASS
+======================================================================
+
+Workspace temizlendi: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\memory_rules_workspace
+PASSED
+
+============================== warnings summary ===============================
+app\ai\agent_loop.py:600
+quality_tests/test_memory_rules_real_qwen3.py::test_memory_rules_real_qwen3
+  C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\app\ai\agent_loop.py:600: SyntaxWarning: "\)" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\)"? A raw string is also an option.
+    Kullan─▒c─▒ g├Ârevinin dosya okuma veya inceleme gerektirip gerektirmedi─şini tespit eder.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 1 passed, 2 warnings in 97.41s (0:01:37) ===================

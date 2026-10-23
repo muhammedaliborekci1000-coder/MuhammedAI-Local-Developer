@@ -9,6 +9,7 @@ from app.ai.conversation_memory import ConversationMemory
 from app.ai.codebase_index import CodebaseIndex
 from app.ai.memory import MemorySystem, MemoryScope
 from app.ai.project_rules import ProjectRules
+from app.ai.cursor_aware_context import CursorAwareContextExtractor, SmartContextPrioritizer
 
 
 class AgentContextBuilder:
@@ -35,7 +36,8 @@ class AgentContextBuilder:
         max_context_chars: int = 30000,
         codebase_index: Optional[CodebaseIndex] = None,
         memory_system: Optional[MemorySystem] = None,
-        project_rules: Optional[ProjectRules] = None
+        project_rules: Optional[ProjectRules] = None,
+        cursor_context_lines: int = 20
     ):
         """
         Args:
@@ -46,6 +48,7 @@ class AgentContextBuilder:
             codebase_index: Codebase index (opsiyonel)
             memory_system: Memory system (opsiyonel)
             project_rules: Project rules (opsiyonel)
+            cursor_context_lines: Cursor etrafındaki satır sayısı
         """
         self.max_recent_messages = max_recent_messages
         self.max_tool_history = max_tool_history
@@ -54,6 +57,10 @@ class AgentContextBuilder:
         self.codebase_index = codebase_index
         self.memory_system = memory_system
         self.project_rules = project_rules
+        
+        # Cursor-aware context
+        self.cursor_extractor = CursorAwareContextExtractor(context_lines=cursor_context_lines)
+        self.prioritizer = SmartContextPrioritizer(max_tokens=max_context_chars // 4)
     
     def build_context(
         self,
@@ -61,7 +68,10 @@ class AgentContextBuilder:
         memory: ConversationMemory,
         system_prompt: Optional[str] = None,
         relevant_files: Optional[List[str]] = None,
-        task: Optional[str] = None
+        task: Optional[str] = None,
+        cursor_file: Optional[str] = None,
+        cursor_line: Optional[int] = None,
+        cursor_column: Optional[int] = 0
     ) -> str:
         """
         Tam context string'i oluşturur.
@@ -72,61 +82,65 @@ class AgentContextBuilder:
             system_prompt: Sistem prompt (opsiyonel)
             relevant_files: İlgili dosyalar (opsiyonel)
             task: Görev açıklaması (rules relevance için)
+            cursor_file: Cursor dosya yolu (opsiyonel)
+            cursor_line: Cursor satır numarası (opsiyonel)
+            cursor_column: Cursor sütun numarası (opsiyonel)
             
         Returns:
             str: Tam context
         """
-        parts = []
+        context_parts = {}
         
         # System Context
         if system_prompt:
-            parts.append(self._build_system_context(system_prompt))
+            context_parts["SYSTEM_CONTEXT"] = self._build_system_context(system_prompt)
+        
+        # Cursor Context (en yüksek öncelik)
+        if cursor_file and cursor_line:
+            cursor_context = self.cursor_extractor.extract_context(cursor_file, cursor_line, cursor_column or 0)
+            if cursor_context:
+                context_parts["CURSOR_CONTEXT"] = self.cursor_extractor.format_context(cursor_context)
         
         # Project Rules (öncelikli)
         if self.project_rules:
-            parts.append(self._build_rules_context(task))
+            context_parts["PROJECT_RULES"] = self._build_rules_context(task)
         
         # Session Context
-        parts.append(self._build_session_context(session))
+        context_parts["SESSION_CONTEXT"] = self._build_session_context(session)
         
         # Project Context (basit - session'dan)
-        parts.append(self._build_project_context(session))
+        context_parts["PROJECT_CONTEXT"] = self._build_project_context(session)
         
         # Codebase Context (varsa)
         if self.codebase_index and relevant_files:
-            parts.append(self._build_codebase_context(relevant_files))
+            context_parts["CODEBASE_CONTEXT"] = self._build_codebase_context(relevant_files)
         
         # Memory Context (varsa)
         if self.memory_system and session.session_id:
-            parts.append(self._build_memory_system_context(session))
+            context_parts["MEMORY"] = self._build_memory_system_context(session)
         
         # Task Context
-        parts.append(self._build_task_context(session))
+        context_parts["TASK_CONTEXT"] = self._build_task_context(session)
         
         # Conversation Memory (recent messages)
-        parts.append(self._build_memory_context(memory))
+        context_parts["MEMORY_CONTEXT"] = self._build_memory_context(memory)
         
         # Tool History (recent)
-        parts.append(self._build_tool_history_context(session))
+        context_parts["TOOL_HISTORY"] = self._build_tool_history_context(session)
         
         # Test Result (recent)
-        parts.append(self._build_test_result_context(session))
+        context_parts["TEST_RESULTS"] = self._build_test_result_context(session)
         
         # Failure Details (varsa)
         if session.last_failure_details:
-            parts.append(self._build_failure_context(session))
+            context_parts["FAILURE_DETAILS"] = self._build_failure_context(session)
         
         # Current Plan (varsa)
         if session.last_plan:
-            parts.append(self._build_current_plan_context(session))
+            context_parts["CURRENT_PLAN"] = self._build_current_plan_context(session)
         
-        # Birleştir ve limit uygula
-        full_context = "\n\n".join(parts)
-        
-        if len(full_context) > self.max_context_chars:
-            # Basit truncation - baştan kesme
-            full_context = full_context[-self.max_context_chars:]
-            full_context = "...[CONTEXT TRUNCATED]...\n\n" + full_context
+        # Smart prioritization ve truncation
+        full_context = self.prioritizer.prioritize_and_truncate(context_parts)
         
         return full_context
     

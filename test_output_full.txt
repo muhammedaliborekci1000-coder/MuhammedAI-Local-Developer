@@ -1,0 +1,204 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 1 item
+
+quality_tests/test_agent_e2e_real_task.py::test_agent_e2e_normal ======================================================================
+TEST 1: Normal Agent E2E (approval=True)
+======================================================================
+
+Production hash'leri al─▒n─▒yor...
+Test dosyas─▒: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\e2e_workspace\agent_task.py
+Orijinal i├ğerik:
+def greet():
+    return "Merhaba"
+
+
+G├Ârev: quality_tests/e2e_workspace/agent_task.py dosyas─▒ndaki greet fonksiyonunun d├Ând├╝rd├╝─ş├╝ metni 'Merhaba Muhammed' olarak de─şi┼ştir.
+----------------------------------------------------------------------
+INFO app.ai.agent_loop:899 Iteration 1/20
+DEBUG httpcore.connection:47 connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
+DEBUG httpcore.connection:47 connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000002A294DC2E40>
+DEBUG httpcore.http11:47 send_request_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_headers.complete
+DEBUG httpcore.http11:47 send_request_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_body.complete
+DEBUG httpcore.http11:47 receive_response_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Fri, 09 Oct 2026 18:27:32 GMT'), (b'Transfer-Encoding', b'chunked')])
+INFO httpx:1025 HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+DEBUG httpcore.http11:47 receive_response_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_body.complete
+DEBUG httpcore.http11:47 response_closed.started
+DEBUG httpcore.http11:47 response_closed.complete
+INFO app.ai.agent_loop:979 RAW MODEL RESPONSE: {"tool": "read_file", "arguments": {"path": "quality_tests/e2e_workspace/agent_task.py"}}...
+INFO app.ai.agent_loop:980 PARSED TOOL CALL: name=read_file, arguments={'path': 'quality_tests/e2e_workspace/agent_task.py'}
+INFO app.ai.agent_loop:981 AVAILABLE TOOLS: ['apply_change', 'browser_click', 'browser_close', 'browser_fill', 'browser_get_errors', 'browser_inspect', 'browser_navigate', 'browser_open', 'browser_reload', 'browser_screenshot', 'browser_scroll', 'browser_select', 'browser_status', 'browser_type', 'check_web_health', 'create_change_plan', 'detect_errors', 'detect_web_project', 'find_dependents', 'find_related_files', 'get_file_dependencies', 'get_symbol_details', 'inspect_http', 'project_scan', 'project_structure', 'project_tree', 'read_file', 'run_python_file', 'search_code', 'search_code_symbols', 'start_web_preview', 'stop_web_preview']
+INFO app.ai.agent_loop:997 Tool ├ğa─şr─▒l─▒yor: read_file
+INFO app.ai.agent_loop:899 Iteration 2/20
+DEBUG httpcore.http11:47 send_request_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_headers.complete
+DEBUG httpcore.http11:47 send_request_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_body.complete
+DEBUG httpcore.http11:47 receive_response_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Fri, 09 Oct 2026 18:27:48 GMT'), (b'Content-Length', b'1678')])
+INFO httpx:1025 HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+DEBUG httpcore.http11:47 receive_response_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_body.complete
+DEBUG httpcore.http11:47 response_closed.started
+DEBUG httpcore.http11:47 response_closed.complete
+INFO app.ai.agent_loop:979 RAW MODEL RESPONSE: {"tool": "read_file", "arguments": {"relative_path": "quality_tests/e2e_workspace/agent_task.py"}}...
+INFO app.ai.agent_loop:980 PARSED TOOL CALL: name=read_file, arguments={'relative_path': 'quality_tests/e2e_workspace/agent_task.py'}
+INFO app.ai.agent_loop:981 AVAILABLE TOOLS: ['apply_change', 'browser_click', 'browser_close', 'browser_fill', 'browser_get_errors', 'browser_inspect', 'browser_navigate', 'browser_open', 'browser_reload', 'browser_screenshot', 'browser_scroll', 'browser_select', 'browser_status', 'browser_type', 'check_web_health', 'create_change_plan', 'detect_errors', 'detect_web_project', 'find_dependents', 'find_related_files', 'get_file_dependencies', 'get_symbol_details', 'inspect_http', 'project_scan', 'project_structure', 'project_tree', 'read_file', 'run_python_file', 'search_code', 'search_code_symbols', 'start_web_preview', 'stop_web_preview']
+INFO app.ai.agent_loop:997 Tool ├ğa─şr─▒l─▒yor: read_file
+INFO app.ai.agent_loop:899 Iteration 3/20
+DEBUG httpcore.http11:47 send_request_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_headers.complete
+DEBUG httpcore.http11:47 send_request_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_body.complete
+DEBUG httpcore.http11:47 receive_response_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Fri, 09 Oct 2026 18:28:23 GMT'), (b'Transfer-Encoding', b'chunked')])
+INFO httpx:1025 HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+DEBUG httpcore.http11:47 receive_response_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_body.complete
+DEBUG httpcore.http11:47 response_closed.started
+DEBUG httpcore.http11:47 response_closed.complete
+INFO app.ai.agent_loop:979 RAW MODEL RESPONSE: {"tool": "create_change_plan", "arguments": {"file_path": "quality_tests/e2e_workspace/agent_task.py", "problem_description": "Change greet function's return value from 'Merhaba' to 'Merhaba Muhammed'...
+INFO app.ai.agent_loop:980 PARSED TOOL CALL: name=create_change_plan, arguments={'file_path': 'quality_tests/e2e_workspace/agent_task.py', 'problem_description': "Change greet function's return value from 'Merhaba' to 'Merhaba Muhammed'"}
+INFO app.ai.agent_loop:981 AVAILABLE TOOLS: ['apply_change', 'browser_click', 'browser_close', 'browser_fill', 'browser_get_errors', 'browser_inspect', 'browser_navigate', 'browser_open', 'browser_reload', 'browser_screenshot', 'browser_scroll', 'browser_select', 'browser_status', 'browser_type', 'check_web_health', 'create_change_plan', 'detect_errors', 'detect_web_project', 'find_dependents', 'find_related_files', 'get_file_dependencies', 'get_symbol_details', 'inspect_http', 'project_scan', 'project_structure', 'project_tree', 'read_file', 'run_python_file', 'search_code', 'search_code_symbols', 'start_web_preview', 'stop_web_preview']
+INFO app.ai.agent_loop:997 Tool ├ğa─şr─▒l─▒yor: create_change_plan
+INFO app.ai.agent_loop:899 Iteration 4/20
+DEBUG httpcore.http11:47 send_request_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_headers.complete
+DEBUG httpcore.http11:47 send_request_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_body.complete
+DEBUG httpcore.http11:47 receive_response_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Fri, 09 Oct 2026 18:28:42 GMT'), (b'Transfer-Encoding', b'chunked')])
+INFO httpx:1025 HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+DEBUG httpcore.http11:47 receive_response_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_body.complete
+DEBUG httpcore.http11:47 response_closed.started
+DEBUG httpcore.http11:47 response_closed.complete
+INFO app.ai.agent_loop:979 RAW MODEL RESPONSE: {"tool": "create_change_plan", "arguments": {"file_path": "quality_tests/e2e_workspace/agent_task.py", "problem": "Change greet function's return value from 'Merhaba' to 'Merhaba Muhammed'"}}...
+INFO app.ai.agent_loop:980 PARSED TOOL CALL: name=create_change_plan, arguments={'file_path': 'quality_tests/e2e_workspace/agent_task.py', 'problem': "Change greet function's return value from 'Merhaba' to 'Merhaba Muhammed'"}
+INFO app.ai.agent_loop:981 AVAILABLE TOOLS: ['apply_change', 'browser_click', 'browser_close', 'browser_fill', 'browser_get_errors', 'browser_inspect', 'browser_navigate', 'browser_open', 'browser_reload', 'browser_screenshot', 'browser_scroll', 'browser_select', 'browser_status', 'browser_type', 'check_web_health', 'create_change_plan', 'detect_errors', 'detect_web_project', 'find_dependents', 'find_related_files', 'get_file_dependencies', 'get_symbol_details', 'inspect_http', 'project_scan', 'project_structure', 'project_tree', 'read_file', 'run_python_file', 'search_code', 'search_code_symbols', 'start_web_preview', 'stop_web_preview']
+INFO app.ai.agent_loop:997 Tool ├ğa─şr─▒l─▒yor: create_change_plan
+DEBUG httpcore.connection:47 connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
+DEBUG httpcore.connection:47 connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000002A294DD8690>
+DEBUG httpcore.http11:47 send_request_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_headers.complete
+DEBUG httpcore.http11:47 send_request_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_body.complete
+DEBUG httpcore.http11:47 receive_response_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Fri, 09 Oct 2026 18:28:54 GMT'), (b'Content-Length', b'980')])
+INFO httpx:1025 HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+DEBUG httpcore.http11:47 receive_response_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_body.complete
+DEBUG httpcore.http11:47 response_closed.started
+DEBUG httpcore.http11:47 response_closed.complete
+INFO app.ai.agent_loop:329 create_change_plan sonucu: success=True
+INFO app.ai.agent_loop:339 Plan validation: valid=True, errors=[]
+INFO app.ai.change_orchestrator:113 Plan olu┼şturuldu ve sakland─▒. Durum: PLAN_READY
+INFO app.ai.agent_loop:348 test_file sa─şlanmad─▒, otomatik aran─▒yor...
+INFO app.ai.agent_loop:367 test_file bulundu: quality_tests\e2e_workspace\test_agent_task.py
+  [APPROVAL] apply_change ÔåÆ APPROVED
+INFO app.ai.change_orchestrator:151 Kullan─▒c─▒ onay─▒ verildi. Durum: APPLY
+INFO app.ai.change_orchestrator:177 apply_change ├ğa─şr─▒ld─▒. State: APPLY, test_file: quality_tests\e2e_workspace\test_agent_task.py
+INFO app.ai.change_orchestrator:206 De─şi┼şiklik uygulan─▒yor. Plan: quality_tests/e2e_workspace/agent_task.py
+INFO app.tools.safe_change_manager:89 apply_patch_and_test ├ğa─şr─▒ld─▒: file_path=quality_tests/e2e_workspace/agent_task.py, test_file=quality_tests\e2e_workspace\test_agent_task.py
+INFO app.tools.safe_change_manager:90 old_code (repr): 'return "Merhaba"'
+INFO app.tools.safe_change_manager:91 new_code (repr): 'return "Merhaba Muhammed"'
+INFO app.ai.change_orchestrator:215 apply_change sonucu: success=True
+INFO app.ai.change_orchestrator:219 De─şi┼şiklik ba┼şar─▒yla uyguland─▒. Durum: COMPLETE
+INFO app.ai.agent_loop:899 Iteration 5/20
+DEBUG httpcore.connection:47 close.started
+DEBUG httpcore.connection:47 close.complete
+DEBUG httpcore.connection:47 connect_tcp.started host='127.0.0.1' port=11434 local_address=None timeout=None socket_options=None
+DEBUG httpcore.connection:47 connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000002A294DDA0D0>
+DEBUG httpcore.http11:47 send_request_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_headers.complete
+DEBUG httpcore.http11:47 send_request_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 send_request_body.complete
+DEBUG httpcore.http11:47 receive_response_headers.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Content-Type', b'application/json; charset=utf-8'), (b'Date', b'Fri, 09 Oct 2026 18:29:09 GMT'), (b'Content-Length', b'1507')])
+INFO httpx:1025 HTTP Request: POST http://127.0.0.1:11434/api/chat "HTTP/1.1 200 OK"
+DEBUG httpcore.http11:47 receive_response_body.started request=<Request [b'POST']>
+DEBUG httpcore.http11:47 receive_response_body.complete
+DEBUG httpcore.http11:47 response_closed.started
+DEBUG httpcore.http11:47 response_closed.complete
+INFO app.ai.agent_loop:970 Tool ├ğa─şr─▒s─▒ yok, d├Âng├╝ tamamland─▒.
+
+SONU├çLAR:
+----------------------------------------------------------------------
+Ba┼şar─▒: True
+Final Cevap: Dosya de─şi┼şikli─şi ba┼şar─▒yla uyguland─▒. `quality_tests/e2e_workspace/agent_task.py` dosyas─▒ndaki `greet` fonksiyonunun d├Ând├╝r├╝len metni **"Merhaba Muhammed"** olarak de─şi┼ştirildi. Test dosyas─▒ (`test_agent_task.py`) da ba┼şar─▒yla ├ğal─▒┼şt─▒r─▒ld─▒ (returncode: 0). 
+
+Ô£à **Sonu├ğ**: De─şi┼şiklik tamamland─▒, testler ge├ğti.  
+Kullan─▒c─▒ onay─▒ al─▒nm─▒┼ş ve sistem otomatik uygulama ger├ğekle┼ştirildi.
+─░terasyon: 5
+Tool ├ça─şr─▒lar─▒: 5
+
+TOOL CALL LOG:
+----------------------------------------------------------------------
+1. Tool: read_file
+   Arguments: {'path': 'quality_tests/e2e_workspace/agent_task.py'}
+   Success: False
+2. Tool: read_file
+   Arguments: {'relative_path': 'quality_tests/e2e_workspace/agent_task.py'}
+   Success: True
+3. Tool: create_change_plan
+   Arguments: {'file_path': 'quality_tests/e2e_workspace/agent_task.py', 'problem_description': "Change greet function's return value from 'Merhaba' to 'Merhaba Muhammed'"}
+   Success: False
+4. Tool: apply_change
+   Arguments: {'plan': {'file': 'quality_tests/e2e_workspace/agent_task.py', 'function': 'greet', 'problem': "Change greet function's return value from 'Merhaba' to 'Merhaba Muhammed'", 'change': "replace the string literal 'Merhaba' with 'Merhaba Muhammed'", 'old_code': 'return "Merhaba"', 'new_code': 'return "Merhaba Muhammed"', 'reason': "The problem requires changing the return value of the greet function from 'Merhaba' to 'Merhaba Muhammed'. The old code is a string literal that needs to be updated. This change ensures the function returns the new string without altering other parts of the file."}, 'test_file': 'quality_tests\\e2e_workspace\\test_agent_task.py', 'approved': True}
+   Success: True
+5. Tool: create_change_plan
+   Arguments: {'file_path': 'quality_tests/e2e_workspace/agent_task.py', 'problem': "Change greet function's return value from 'Merhaba' to 'Merhaba Muhammed'"}
+   Success: True
+
+APPROVAL LOG:
+----------------------------------------------------------------------
+1. apply_change ÔåÆ APPROVED
+
+DOSYA ─░├çER─░─Ş─░ KONTROL├£:
+----------------------------------------------------------------------
+Son i├ğerik (repr): 'def greet():\n    return "Merhaba Muhammed"\n'
+Son i├ğerik:
+def greet():
+    return "Merhaba Muhammed"
+
+Expected content (repr): 'def greet():\n    return "Merhaba Muhammed"\n'
+Expected content:
+def greet():
+    return "Merhaba Muhammed"
+
+Content match: True
+
+DOSYA ├çALI┼ŞTIRMA TEST─░:
+----------------------------------------------------------------------
+greet() sonucu: Merhaba Muhammed
+
+PRODUCTION ─░ZOLASYONU KONTROL├£:
+----------------------------------------------------------------------
+[OK] PASS: Production dosyalar─▒ de─şi┼şmedi
+
+DO─ŞRULAMALAR:
+----------------------------------------------------------------------
+read_file ├ğa─şr─▒ld─▒: True
+create_change_plan ├ğa─şr─▒ld─▒: True
+apply_change ├ğa─şr─▒ld─▒: True
+Approval verildi: True
+Dosya i├ğeri─şi do─şru: True
+greet() do─şru: True
+Production de─şi┼şmedi: True
+
+======================================================================
+TEST 1 SONUCU
+======================================================================
+TOPLAM: PASS
+======================================================================
+PASSED
+
+======================== 1 passed in 142.15s (0:02:22) ========================

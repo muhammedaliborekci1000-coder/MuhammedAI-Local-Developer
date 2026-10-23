@@ -17,7 +17,7 @@ from app.core.config import PROJECT_ROOT, IGNORED_DIRECTORIES
 @dataclass
 class Symbol:
     """Kod sembolü (class, function, method)."""
-    type: str  # class, function, method, async_function, async_method
+    type: str  # class, function, method, async_function, async_method, variable
     name: str
     file: str
     line_start: int
@@ -26,6 +26,12 @@ class Symbol:
     parent_class: Optional[str] = None
     decorators: List[str] = field(default_factory=list)
     docstring: Optional[str] = None
+    references: List[str] = field(default_factory=list)  # Dosya yolları (referanslar)
+    calls: List[str] = field(default_factory=list)  # Çağırdığı semboller
+    called_by: List[str] = field(default_factory=list)  # Kendisini çağıran semboller
+    base_classes: List[str] = field(default_factory=list)  # Miras aldığı class'lar
+    derived_classes: List[str] = field(default_factory=list)  # Kendisinden türeyen class'lar
+    type_hint: Optional[str] = None  # Type hint (varsa)
 
 
 @dataclass
@@ -60,12 +66,20 @@ class CodebaseIndex:
     files: Dict[str, FileIndex] = field(default_factory=dict)
     import_graph: Dict[str, Set[str]] = field(default_factory=dict)  # file -> imports
     reverse_import_graph: Dict[str, Set[str]] = field(default_factory=dict)  # file -> imported_by
+    call_graph: Dict[str, Set[str]] = field(default_factory=dict)  # symbol -> calls
+    reverse_call_graph: Dict[str, Set[str]] = field(default_factory=dict)  # symbol -> called_by
+    inheritance_graph: Dict[str, Set[str]] = field(default_factory=dict)  # class -> bases
+    reverse_inheritance_graph: Dict[str, Set[str]] = field(default_factory=dict)  # class -> derived
     
     def __init__(self, project_root: Path = PROJECT_ROOT):
         self.project_root = Path(project_root)
         self.files = {}
         self.import_graph = {}
         self.reverse_import_graph = {}
+        self.call_graph = {}
+        self.reverse_call_graph = {}
+        self.inheritance_graph = {}
+        self.reverse_inheritance_graph = {}
     
     def index_project(self) -> None:
         """Projeyi indeksle."""
@@ -73,6 +87,9 @@ class CodebaseIndex:
             self.index_file(py_file)
         
         self._build_import_graph()
+        self._build_call_graph()
+        self._build_inheritance_graph()
+        self._build_symbol_references()
     
     def _scan_python_files(self) -> List[Path]:
         """Python dosyalarını tara."""
@@ -292,6 +309,170 @@ class CodebaseIndex:
             Set[str]: Dependents
         """
         return self.reverse_import_graph.get(file_path, set())
+    
+    def find_usages(self, symbol_name: str, file_path: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Sembolün kullanımlarını bul (find usages).
+        
+        Args:
+            symbol_name: Sembol adı
+            file_path: Dosya yolu (opsiyonel - belirli dosyada ara)
+            
+        Returns:
+            List[Dict]: Kullanımlar (file, line, context)
+        """
+        usages = []
+        
+        for file_index in self.files.values():
+            if file_path and file_index.file_path != file_path:
+                continue
+            
+            if file_index.parse_error:
+                continue
+            
+            # Dosyayı oku ve symbol kullanımlarını ara
+            try:
+                full_path = self.project_root / file_index.file_path
+                content = full_path.read_text(encoding='utf-8')
+                lines = content.splitlines()
+                
+                for line_num, line in enumerate(lines, 1):
+                    if symbol_name in line:
+                        # Basit string matching - daha gelişmiş AST tracking yapılabilir
+                        usages.append({
+                            "file": file_index.file_path,
+                            "line": line_num,
+                            "context": line.strip(),
+                            "symbol": symbol_name
+                        })
+            except Exception:
+                pass
+        
+        return usages
+    
+    def go_to_definition(self, symbol_name: str, file_path: str, line: int) -> Optional[Dict[str, Any]]:
+        """
+        Symbol definition'ına git (go to definition).
+        
+        Args:
+            symbol_name: Sembol adı
+            file_path: Dosya yolu
+            line: Satır numarası
+            
+        Returns:
+            Optional[Dict]: Definition bilgisi
+        """
+        # Önce aynı dosyada ara
+        if file_path in self.files:
+            for symbol in self.files[file_path].symbols:
+                if symbol.name == symbol_name:
+                    return {
+                        "file": symbol.file,
+                        "line": symbol.line_start,
+                        "line_end": symbol.line_end,
+                        "type": symbol.type,
+                        "signature": symbol.signature,
+                        "docstring": symbol.docstring
+                    }
+        
+        # Tüm dosyalarda ara
+        for file_index in self.files.values():
+            for symbol in file_index.symbols:
+                if symbol.name == symbol_name:
+                    return {
+                        "file": symbol.file,
+                        "line": symbol.line_start,
+                        "line_end": symbol.line_end,
+                        "type": symbol.type,
+                        "signature": symbol.signature,
+                        "docstring": symbol.docstring
+                    }
+        
+        return None
+    
+    def get_call_hierarchy(self, symbol_name: str) -> Dict[str, List[str]]:
+        """
+        Call hierarchy al (çağırdığı ve çağıran semboller).
+        
+        Args:
+            symbol_name: Sembol adı
+            
+        Returns:
+            Dict: calls (çağırdığı), called_by (çağıran)
+        """
+        symbol_key = f"{symbol_name}"
+        
+        return {
+            "calls": list(self.call_graph.get(symbol_key, set())),
+            "called_by": list(self.reverse_call_graph.get(symbol_key, set()))
+        }
+    
+    def get_inheritance_hierarchy(self, class_name: str) -> Dict[str, List[str]]:
+        """
+        Inheritance hierarchy al (miras ve türeyen class'lar).
+        
+        Args:
+            class_name: Class adı
+            
+        Returns:
+            Dict: base_classes (miras aldığı), derived_classes (türeyen)
+        """
+        class_key = f"{class_name}"
+        
+        return {
+            "base_classes": list(self.inheritance_graph.get(class_key, set())),
+            "derived_classes": list(self.reverse_inheritance_graph.get(class_key, set()))
+        }
+    
+    def _build_call_graph(self) -> None:
+        """Call graph oluştur."""
+        self.call_graph = {}
+        self.reverse_call_graph = {}
+        
+        for file_index in self.files.values():
+            if file_index.parse_error:
+                continue
+            
+            for symbol in file_index.symbols:
+                if symbol.type in ["function", "method", "async_function", "async_method"]:
+                    symbol_key = f"{symbol.file}:{symbol.name}"
+                    self.call_graph[symbol_key] = set(symbol.calls)
+                    
+                    # Reverse graph
+                    for called in symbol.calls:
+                        if called not in self.reverse_call_graph:
+                            self.reverse_call_graph[called] = set()
+                        self.reverse_call_graph[called].add(symbol_key)
+    
+    def _build_inheritance_graph(self) -> None:
+        """Inheritance graph oluştur."""
+        self.inheritance_graph = {}
+        self.reverse_inheritance_graph = {}
+        
+        for file_index in self.files.values():
+            if file_index.parse_error:
+                continue
+            
+            for symbol in file_index.symbols:
+                if symbol.type == "class":
+                    class_key = f"{symbol.file}:{symbol.name}"
+                    self.inheritance_graph[class_key] = set(symbol.base_classes)
+                    
+                    # Reverse graph
+                    for base in symbol.base_classes:
+                        if base not in self.reverse_inheritance_graph:
+                            self.reverse_inheritance_graph[base] = set()
+                        self.reverse_inheritance_graph[base].add(class_key)
+    
+    def _build_symbol_references(self) -> None:
+        """Symbol referanslarını oluştur."""
+        for file_index in self.files.values():
+            if file_index.parse_error:
+                continue
+            
+            for symbol in file_index.symbols:
+                symbol_key = f"{symbol.file}:{symbol.name}"
+                symbol.references = list(self.reverse_call_graph.get(symbol_key, set()))
 
 
 class CodeIndexVisitor(ast.NodeVisitor):
@@ -303,10 +484,20 @@ class CodeIndexVisitor(ast.NodeVisitor):
         self.symbols: List[Symbol] = []
         self.imports: List[ImportInfo] = []
         self.current_class: Optional[str] = None
+        self.current_function: Optional[str] = None
+        self.function_calls: List[str] = []
     
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Class definition."""
         decorators = [self._get_decorator_name(d) for d in node.decorator_list]
+        
+        # Base classes
+        base_classes = []
+        for base in node.bases:
+            if isinstance(base, ast.Name):
+                base_classes.append(base.id)
+            elif isinstance(base, ast.Attribute):
+                base_classes.append(self._get_attribute_name(base))
         
         symbol = Symbol(
             type="class",
@@ -316,15 +507,11 @@ class CodeIndexVisitor(ast.NodeVisitor):
             line_end=self._get_end_line(node),
             signature=f"class {node.name}",
             decorators=decorators,
-            docstring=ast.get_docstring(node)
+            docstring=ast.get_docstring(node),
+            base_classes=base_classes
         )
         
         self.symbols.append(symbol)
-        
-        # Inheritance
-        for base in node.bases:
-            if isinstance(base, ast.Name):
-                pass  # Inheritance info eklenebilir
         
         # Visit methods
         old_class = self.current_class
@@ -343,6 +530,15 @@ class CodeIndexVisitor(ast.NodeVisitor):
             symbol_type = "function"
             signature = f"def {node.name}({self._get_args(node)})"
         
+        # Function calls reset
+        self.function_calls = []
+        
+        # Visit body to collect calls
+        old_function = self.current_function
+        self.current_function = node.name
+        self.generic_visit(node)
+        self.current_function = old_function
+        
         symbol = Symbol(
             type=symbol_type,
             name=node.name,
@@ -352,11 +548,12 @@ class CodeIndexVisitor(ast.NodeVisitor):
             signature=signature,
             parent_class=self.current_class,
             decorators=decorators,
-            docstring=ast.get_docstring(node)
+            docstring=ast.get_docstring(node),
+            calls=list(self.function_calls)
         )
         
         self.symbols.append(symbol)
-        self.generic_visit(node)
+        self.function_calls = []
     
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         """Async function/method definition."""
@@ -369,6 +566,15 @@ class CodeIndexVisitor(ast.NodeVisitor):
             symbol_type = "async_function"
             signature = f"async def {node.name}({self._get_args(node)})"
         
+        # Function calls reset
+        self.function_calls = []
+        
+        # Visit body to collect calls
+        old_function = self.current_function
+        self.current_function = node.name
+        self.generic_visit(node)
+        self.current_function = old_function
+        
         symbol = Symbol(
             type=symbol_type,
             name=node.name,
@@ -378,11 +584,12 @@ class CodeIndexVisitor(ast.NodeVisitor):
             signature=signature,
             parent_class=self.current_class,
             decorators=decorators,
-            docstring=ast.get_docstring(node)
+            docstring=ast.get_docstring(node),
+            calls=list(self.function_calls)
         )
         
         self.symbols.append(symbol)
-        self.generic_visit(node)
+        self.function_calls = []
     
     def visit_Import(self, node: ast.Import) -> None:
         """Import statement."""
@@ -406,6 +613,13 @@ class CodeIndexVisitor(ast.NodeVisitor):
                 is_from=True,
                 from_module=module
             ))
+        self.generic_visit(node)
+    
+    def visit_Call(self, node: ast.Call) -> None:
+        """Function call tracking."""
+        call_name = self._get_call_name(node)
+        if call_name:
+            self.function_calls.append(call_name)
         self.generic_visit(node)
     
     def _get_args(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
@@ -445,6 +659,22 @@ class CodeIndexVisitor(ast.NodeVisitor):
         elif isinstance(decorator, ast.Call):
             return self._get_decorator_name(decorator.func)
         return ""
+    
+    def _get_call_name(self, node: ast.Call) -> str:
+        """Function call name."""
+        if isinstance(node.func, ast.Name):
+            return node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            return self._get_attribute_name(node.func)
+        return ""
+    
+    def _get_attribute_name(self, node: ast.Attribute) -> str:
+        """Attribute name."""
+        if isinstance(node.value, ast.Name):
+            return f"{node.value.id}.{node.attr}"
+        elif isinstance(node.value, ast.Attribute):
+            return f"{self._get_attribute_name(node.value)}.{node.attr}"
+        return node.attr
     
     def _get_end_line(self, node: ast.AST) -> int:
         """Get end line of node."""

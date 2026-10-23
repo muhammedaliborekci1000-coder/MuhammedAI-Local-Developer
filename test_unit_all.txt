@@ -1,0 +1,73 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 3 items
+
+quality_tests/test_correction_loop_unit.py::test_correction_fail_then_success_unit 
+======================================================================
+TEST 1 ÔÇö Ba┼şar─▒s─▒z Denemeden Sonra D├╝zeltme (Unit)
+======================================================================
+
+Sonu├ğ:
+Success: True
+Error: None
+Approval count: 0
+Apply count: 0
+Correction attempt counter: 0
+Correction history length: 0
+Not: Correction loop ba┼şlat─▒lmad─▒ (ilk deneme ba┼şar─▒l─▒ oldu).
+ÔÜá Kod d├╝zeltilmedi.
+
+======================================================================
+TEST 1: PASS
+======================================================================
+PASSED
+quality_tests/test_correction_loop_unit.py::test_correction_approval_rejected_unit 
+======================================================================
+TEST 2 ÔÇö Onay Reddi (Unit)
+======================================================================
+Approval: apply_change -> APPROVED
+Mock apply_patch_and_test ├ğa─şr─▒ld─▒ (count=1)
+  -> ─░lk ├ğa─şr─▒: ba┼şar─▒s─▒z d├Ând├╝r├╝l├╝yor
+
+Sonu├ğ:
+Success: True
+Error: None
+Approval count: 1
+Apply count: 1
+Correction attempt counter: 1
+Correction history length: 1
+Not: Dosya de─şi┼ştirildi (ilk de─şi┼şiklik onayland─▒, correction reddedildi).
+
+Correction history length: 1
+Correction history:
+  Attempt 1: approval=approved, success=False
+
+======================================================================
+TEST 2: PASS
+======================================================================
+PASSED
+quality_tests/test_correction_loop_unit.py::test_correction_max_attempts_unit 
+======================================================================
+TEST 3 ÔÇö Maksimum Deneme S─▒n─▒r─▒ (Unit)
+======================================================================
+
+Sonu├ğ:
+Success: True
+Error: None
+Approval count: 0
+Apply count: 0
+Correction attempt counter: 0
+Correction history length: 0
+Not: Correction loop ba┼şlat─▒lmad─▒ (agent testi d├╝zeltmedi).
+Ô£ô Dosya rollback yap─▒ld─▒.
+
+======================================================================
+TEST 3: PASS
+======================================================================
+PASSED
+
+======================== 3 passed in 685.72s (0:11:25) ========================

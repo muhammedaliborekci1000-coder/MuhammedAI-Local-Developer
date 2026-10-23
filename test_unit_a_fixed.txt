@@ -1,0 +1,56 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 1 item
+
+quality_tests/test_correction_loop_unit.py::test_correction_fail_then_success_unit 
+======================================================================
+TEST A ÔÇö Fail then Success (Unit)
+======================================================================
+Mock AgentLoop.run ├ğa─şr─▒ld─▒
+Mock chat ├ğa─şr─▒ld─▒ - dummy yan─▒t
+Mock parse (count=1)
+  -> read_file
+Mock chat ├ğa─şr─▒ld─▒ - dummy yan─▒t
+Mock parse (count=2)
+  -> create_change_plan (ilk)
+Mock chat ├ğa─şr─▒ld─▒ - dummy yan─▒t
+Mock parse (count=3)
+  -> apply_change (ilk)
+Mock chat ├ğa─şr─▒ld─▒ - dummy yan─▒t
+Mock parse (count=4)
+  -> create_change_plan (correction)
+Mock chat ├ğa─şr─▒ld─▒ - dummy yan─▒t
+Mock parse (count=5)
+  -> apply_change (correction)
+Mock chat ├ğa─şr─▒ld─▒ - dummy yan─▒t
+Mock parse (count=6)
+  -> no tool calls
+
+Sonu├ğ:
+Success: True
+Approval count: 0
+Parse count: 6
+Execute count: 0
+Correction attempt: 1
+Correction history length: 2
+Ô£ô Correction loop ba┼şlat─▒ld─▒.
+Ô£ô Correction history dolu.
+
+Correction history:
+  Attempt 1: success=False, approval=approved
+  Attempt 2: success=True, approval=approved
+Ô£ô ─░lk deneme ba┼şar─▒s─▒z.
+Ô£ô Son deneme ba┼şar─▒l─▒.
+Ô£ô Sonu├ğ ba┼şar─▒l─▒.
+Ô£ô Son kod do─şru.
+
+======================================================================
+TEST A: PASS
+======================================================================
+PASSED
+
+============================== 1 passed in 0.57s ==============================

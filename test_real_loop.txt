@@ -1,0 +1,63 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 1 item
+
+quality_tests/test_correction_loop.py::test_correction_real_loop 
+======================================================================
+TEST A2 ÔÇö Ger├ğek Correction Loop
+======================================================================
+
+Calculator dosyas─▒: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace\calculator.py
+Test dosyas─▒: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace\test_calculator.py
+Orijinal kod:
+def add(a, b):
+    return a - b
+
+def subtract(a, b):
+    return a + b  # Bu da hatal─▒
+
+
+G├Ârev: L├╝tfen quality_tests\correction_workspace\calculator.py dosyas─▒ndaki add ve subtract fonksiyonlar─▒n─▒ d├╝zeltin.
+add fonksiyonu toplama yapmal─▒ (a + b).
+subtract fonksiyonu ├ğ─▒karma yapmal─▒ (a - b).
+quality_tests\correction_workspace\test_calculator.py test dosyas─▒n─▒ kullanarak de─şi┼şikli─şi do─şrulay─▒n.
+----------------------------------------------------------------------
+Approval: apply_change -> APPROVED
+Approval: start_web_preview -> APPROVED
+Approval: stop_web_preview -> APPROVED
+Approval: apply_change -> APPROVED
+
+AgentLoop sonucu:
+Success: True
+Error: None
+Iterations: 8
+Tool calls: 17
+
+Son kod:
+def add(a, b):
+    return a + b
+
+def subtract(a, b):
+    return a - b  # Bu da hatal─▒
+
+
+Tekrar test sonucu:
+Success: True
+Returncode: 0
+Stdout: 
+Stderr: 
+
+Not: Agent ilk denemede ba┼şar─▒l─▒ oldu, correction loop ba┼şlamad─▒.
+
+======================================================================
+TEST A2: PASS
+======================================================================
+
+Workspace temizlendi: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace
+PASSED
+
+======================== 1 passed in 552.28s (0:09:12) ========================

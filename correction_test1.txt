@@ -1,0 +1,127 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 1 item
+
+quality_tests/test_correction_loop.py::test_correction_successful 
+======================================================================
+TEST A ÔÇö Ba┼şar─▒l─▒ Correction
+======================================================================
+
+Calculator dosyas─▒: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace\calculator.py
+Test dosyas─▒: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace\test_calculator.py
+Orijinal kod:
+def add(a, b):
+    return a - b
+
+
+G├Ârev: quality_tests\correction_workspace\calculator.py dosyas─▒ndaki problemi d├╝zelt ve quality_tests\correction_workspace\test_calculator.py testini ba┼şar─▒yla ge├ğir.
+----------------------------------------------------------------------
+
+AgentLoop sonucu:
+Success: True
+Error: None
+Iterations: 2
+Tool calls: 1
+
+Son kod:
+def add(a, b):
+    return a - b
+
+
+Workspace temizlendi: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace
+FAILED
+
+================================== FAILURES ===================================
+_________________________ test_correction_successful __________________________
+
+    @pytest.mark.slow
+    def test_correction_successful():
+        """
+        TEST A ÔÇö Ba┼şar─▒l─▒ correction
+        Ba┼şlang─▒├ğ: add(a, b) returns a - b (hatal─▒)
+        Test: assert add(2, 3) == 5
+        Beklenen: Initial FAIL ÔåÆ rollback ÔåÆ correction ÔåÆ PASS
+        """
+        print("\n" + "=" * 70)
+        print("TEST A ÔÇö Ba┼şar─▒l─▒ Correction")
+        print("=" * 70)
+    
+        workspace = PROJECT_ROOT / "quality_tests" / "correction_workspace"
+        workspace.mkdir(parents=True, exist_ok=True)
+    
+        try:
+            # Ba┼şlang─▒├ğ kodu (hatal─▒)
+            calculator_file = workspace / "calculator.py"
+            original_code = 'def add(a, b):\n    return a - b\n'
+            with open(calculator_file, 'w', encoding='utf-8') as f:
+                f.write(original_code)
+    
+            # Test dosyas─▒
+            test_file = workspace / "test_calculator.py"
+            test_code = 'def test_add():\n    assert add(2, 3) == 5\n'
+            with open(test_file, 'w', encoding='utf-8') as f:
+                f.write(test_code)
+    
+            print(f"\nCalculator dosyas─▒: {calculator_file}")
+            print(f"Test dosyas─▒: {test_file}")
+            print(f"Orijinal kod:\n{original_code}")
+    
+            # Relative path hesapla
+            relative_calc = str(calculator_file.relative_to(PROJECT_ROOT))
+            relative_test = str(test_file.relative_to(PROJECT_ROOT))
+    
+            # AgentLoop olu┼ştur
+            ollama_client = OllamaClient()
+            tool_registry = ToolRegistry()
+            config = LoopConfig(
+                max_iterations=10,
+                max_correction_attempts=3,
+                enable_logging=True
+            )
+    
+            # Approval callback - her zaman onay ver
+            def approval_callback(tool_name, arguments):
+                print(f"Approval: {tool_name} -> APPROVED")
+                return True
+    
+            agent_loop = AgentLoop(
+                ollama_client=ollama_client,
+                tool_registry=tool_registry,
+                config=config,
+                approval_callback=approval_callback
+            )
+    
+            # G├Ârev
+            user_task = f"{relative_calc} dosyas─▒ndaki problemi d├╝zelt ve {relative_test} testini ba┼şar─▒yla ge├ğir."
+    
+            print(f"\nG├Ârev: {user_task}")
+            print("-" * 70)
+    
+            # AgentLoop'u ├ğal─▒┼şt─▒r
+            result = agent_loop.run(user_task)
+    
+            print(f"\nAgentLoop sonucu:")
+            print(f"Success: {result.success}")
+            print(f"Error: {result.error}")
+            print(f"Iterations: {result.iterations}")
+            print(f"Tool calls: {len(result.tool_calls)}")
+    
+            # Son dosyay─▒ kontrol et
+            with open(calculator_file, 'r', encoding='utf-8') as f:
+                final_code = f.read()
+    
+            print(f"\nSon kod:\n{final_code}")
+    
+            # Do─şrulamalar
+>           assert "return a + b" in final_code or "return a+b" in final_code, "Kod d├╝zeltilmedi"
+E           AssertionError: Kod d├╝zeltilmedi
+E           assert ('return a + b' in 'def add(a, b):\n    return a - b\n' or 'return a+b' in 'def add(a, b):\n    return a - b\n')
+
+quality_tests\test_correction_loop.py:99: AssertionError
+=========================== short test summary info ===========================
+FAILED quality_tests/test_correction_loop.py::test_correction_successful - As...
+======================== 1 failed in 177.54s (0:02:57) ========================

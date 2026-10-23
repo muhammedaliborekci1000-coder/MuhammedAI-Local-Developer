@@ -30,7 +30,7 @@ class TestPlanValidatorWhitespaceMatching:
         }
         
         # Mock the reader to return our source code
-        validator.reader.read = lambda x: source_code
+        validator.reader.read = lambda x: {"content": source_code, "total_lines": len(source_code.splitlines()), "read_lines": len(source_code.splitlines()), "offset": 0, "truncated": False}
         
         result = validator.validate(plan)
         
@@ -56,7 +56,7 @@ class TestPlanValidatorWhitespaceMatching:
             "reason": "Update greeting"
         }
         
-        validator.reader.read = lambda x: source_code
+        validator.reader.read = lambda x: {"content": source_code, "total_lines": len(source_code.splitlines()), "read_lines": len(source_code.splitlines()), "offset": 0, "truncated": False}
         
         result = validator.validate(plan)
         
@@ -84,7 +84,7 @@ class TestPlanValidatorWhitespaceMatching:
             "reason": "Update greeting"
         }
         
-        validator.reader.read = lambda x: source_code
+        validator.reader.read = lambda x: {"content": source_code, "total_lines": len(source_code.splitlines()), "read_lines": len(source_code.splitlines()), "offset": 0, "truncated": False}
         
         result = validator.validate(plan)
         
@@ -109,7 +109,7 @@ class TestPlanValidatorWhitespaceMatching:
             "reason": "Update greeting"
         }
         
-        validator.reader.read = lambda x: source_code
+        validator.reader.read = lambda x: {"content": source_code, "total_lines": len(source_code.splitlines()), "read_lines": len(source_code.splitlines()), "offset": 0, "truncated": False}
         
         result = validator.validate(plan)
         
@@ -138,7 +138,7 @@ def hello():
             "reason": "Update greeting"
         }
         
-        validator.reader.read = lambda x: source_code
+        validator.reader.read = lambda x: {"content": source_code, "total_lines": len(source_code.splitlines()), "read_lines": len(source_code.splitlines()), "offset": 0, "truncated": False}
         
         result = validator.validate(plan)
         
@@ -167,7 +167,7 @@ def hello():
             "reason": "Update greeting"
         }
         
-        validator.reader.read = lambda x: source_code
+        validator.reader.read = lambda x: {"content": source_code, "total_lines": len(source_code.splitlines()), "read_lines": len(source_code.splitlines()), "offset": 0, "truncated": False}
         
         result = validator.validate(plan)
         
@@ -196,7 +196,7 @@ def hello():
             "reason": "Update greeting"
         }
         
-        validator.reader.read = lambda x: source_code
+        validator.reader.read = lambda x: {"content": source_code, "total_lines": len(source_code.splitlines()), "read_lines": len(source_code.splitlines()), "offset": 0, "truncated": False}
         
         result = validator.validate(plan)
         
@@ -223,7 +223,7 @@ def hello():
             "reason": "Update greeting"
         }
         
-        validator.reader.read = lambda x: source_code
+        validator.reader.read = lambda x: {"content": source_code, "total_lines": len(source_code.splitlines()), "read_lines": len(source_code.splitlines()), "offset": 0, "truncated": False}
         
         result = validator.validate(plan)
         
@@ -251,7 +251,7 @@ def hello():
             "reason": "Update greeting"
         }
         
-        validator.reader.read = lambda x: source_code
+        validator.reader.read = lambda x: {"content": source_code, "total_lines": len(source_code.splitlines()), "read_lines": len(source_code.splitlines()), "offset": 0, "truncated": False}
         
         result = validator.validate(plan)
         

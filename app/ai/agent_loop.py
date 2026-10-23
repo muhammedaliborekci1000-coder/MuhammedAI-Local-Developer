@@ -255,7 +255,29 @@ class AgentLoop:
             return False
 
         try:
-            return self.approval_callback(tool_name, arguments)
+            result = self.approval_callback(tool_name, arguments)
+            
+            # Awaitable kontrolü - async callback senkron çağrıldıysa
+            import inspect
+            if inspect.isawaitable(result):
+                # Coroutine ise kapat (RuntimeWarning önlemek için)
+                if inspect.iscoroutine(result):
+                    result.close()
+                self.logger.error(
+                    f"Onay callback awaitable döndürdü (async callback senkron çağrıldı). "
+                    f"{tool_name} için onay REDDEDİLDİ."
+                )
+                return False
+            
+            # Sonucun gerçek bool olduğunu kontrol et
+            if not isinstance(result, bool):
+                self.logger.error(
+                    f"Onay callback bool döndürmedi: {type(result)}. "
+                    f"{tool_name} için onay REDDEDİLDİ."
+                )
+                return False
+            
+            return result
         except Exception as exc:
             self.logger.error(f"Onay callback hatası: {exc}")
             return False
@@ -736,10 +758,14 @@ ARAÇ KULLANIM KURALLARI:
 
 ÖNEMLİ:
 - Genel bilgi, sohbet, kavramsal sorular için tool kullanmak zorunlu değil.
-- Bir kullanıcı isteği gerçek proje dosyası, kod, hata, arama, çalıştırma veya değişiklik işlemi gerektiriyorsa,
-  araç sonucu alınmadan görevin tamamlandığını söyleme.
 - Dosya içeriğini tahmin etme veya genel bilgiyle gerçek dosya hakkında cevap verme.
 - Parametre isimlerini yanlış kullanırsanız araç çalışmayacaktır.
+- Terminal komutları (git status, python --version vb.) için execute_terminal_command aracını KULLANMALISINIZ.
+- Sistem bilgisi veya sürüm kontrolü için araç kullanmak ZORUNLUDUR.
+- Terminal komutu çalıştırdıktan sonra sonucu kullanarak cevap verin, GEREKSİZ tool calls yapmayın.
+- Git status, python --version gibi basit komutlar için sadece terminal aracı kullanın ve sonucu açıklayın.
+- Git status sonucunu aldıktan sonra, sonucu doğrudan açıklayın. Proje taraması veya diğer araçlar yapmayın.
+- KESİNLİKLE: Git status veya python --version gibi basit terminal komutlarında, komut sonucunu aldıktan sonra DİĞER HİÇBİR ARACI ÇAĞIRMA. Sadece sonucu açıkla ve görevi tamamla.
 ```"""
 
         return prompt
@@ -990,13 +1016,19 @@ ARAÇ KULLANIM KURALLARI:
                     from app.core.config import PROJECT_ROOT
                     reader = FileReader(project_root=PROJECT_ROOT)
                     target_file_content = reader.read(target_file_path)
-                    self.logger.info(f"Hedef dosya okundu: {len(target_file_content)} karakter")
+                    
+                    # FileReader dictionary döndürebilir, content alanını al
+                    if isinstance(target_file_content, dict):
+                        content_to_show = target_file_content.get('content', '')
+                        self.logger.info(f"Hedef dosya okundu: {len(content_to_show)} karakter")
+                    else:
+                        content_to_show = target_file_content
+                        self.logger.info(f"Hedef dosya okundu: {len(content_to_show)} karakter")
                     
                     # Dosya içeriği çok uzunsa truncate et (model context limiti için)
                     max_content_length = 8000
-                    content_to_show = target_file_content
-                    if len(target_file_content) > max_content_length:
-                        content_to_show = target_file_content[:max_content_length]
+                    if len(content_to_show) > max_content_length:
+                        content_to_show = content_to_show[:max_content_length]
                         content_to_show += f"\n\n... (Dosya içeriği {len(target_file_content)} karakter, ilk {max_content_length} karakter gösteriliyor)"
                     
                     # Okunan içeriği modele bağlam olarak ver
@@ -1064,14 +1096,18 @@ ARAÇ KULLANIM KURALLARI:
                     error=error_msg
                 )
 
-            # AI yanıtını memory'ye ekle (tool_calls ile)
-            self.memory.add_assistant_message(ai_response, tool_calls=ai_tool_calls)
-
             # Native tool_calls kontrolü
             if ai_tool_calls:
-                # Native tool calls var, bunları işle
+                # Native tool calls var, tool_call_id'leri oluştur
+                import uuid
+                tool_call_ids = [str(uuid.uuid4()) for _ in ai_tool_calls]
+                
+                # AI yanıtını memory'ye ekle (tool_calls ve tool_call_ids ile)
+                self.memory.add_assistant_message(ai_response, tool_calls=ai_tool_calls, tool_call_ids=tool_call_ids)
+                
+                # Native tool calls işle
                 self.logger.info(f"Native tool_calls alındı: {len(ai_tool_calls)}")
-                for tc in ai_tool_calls:
+                for tc, tool_call_id in zip(ai_tool_calls, tool_call_ids):
                     # Ollama tool_calls formatını ToolCall'a çevir
                     tool_name = tc.function.name if hasattr(tc, 'function') else tc.get('function', {}).get('name')
                     tool_args = tc.function.arguments if hasattr(tc, 'function') else tc.get('function', {}).get('arguments', {})
@@ -1082,7 +1118,7 @@ ARAÇ KULLANIM KURALLARI:
                         if tool_name not in allowed_tools:
                             error_msg = f"Kod değişikliği görevi için izin verilmeyen araç: {tool_name}. Sadece dosya okuma, plan oluşturma ve test araçlarına izin var."
                             self.logger.warning(error_msg)
-                            self.memory.add_tool_result(tool_name, {"error": error_msg}, False)
+                            self.memory.add_tool_result(tool_name, {"error": error_msg}, False, tool_call_id=tool_call_id)
                             continue
                     
                     # Inspection-only görevde araç sınırlama
@@ -1092,7 +1128,7 @@ ARAÇ KULLANIM KURALLARI:
                         if tool_name not in allowed_tools:
                             error_msg = f"Inspection-only görev için izin verilmeyen araç: {tool_name}. Hedef dosya zaten okundu. Sadece arama araçlarına izin var."
                             self.logger.warning(error_msg)
-                            self.memory.add_tool_result(tool_name, {"error": error_msg}, False)
+                            self.memory.add_tool_result(tool_name, {"error": error_msg}, False, tool_call_id=tool_call_id)
                             continue
                     
                     # Tekrarlanan başarısız çağrı kontrolü
@@ -1102,7 +1138,7 @@ ARAÇ KULLANIM KURALLARI:
                         if not prev_result.get("success", True) and count >= 3:
                             error_msg = f"Aynı araç çağrısı ({tool_name}) 3 kez başarısız oldu. Farklı bir strateji deneyin."
                             self.logger.warning(error_msg)
-                            self.memory.add_tool_result(tool_name, {"error": error_msg}, False)
+                            self.memory.add_tool_result(tool_name, {"error": error_msg}, False, tool_call_id=tool_call_id)
                             continue
                     
                     tool_call = ToolCall(name=tool_name, arguments=tool_args, raw_text=str(tc))
@@ -1111,15 +1147,16 @@ ARAÇ KULLANIM KURALLARI:
                     # Tool çağrısını yürüt
                     result = self._execute_tool_call(tool_call, iteration)
                     
-                    # Sonucu memory'ye ekle
-                    self.memory.add_tool_result(tool_name, result, result.get("success", False))
+                    # Sonucu memory'ye ekle (tool_call_id ile)
+                    self.memory.add_tool_result(tool_name, result, result.get("success", False), tool_call_id=tool_call_id)
                     
                     # Log
                     log_entry = {
                         "iteration": iteration,
                         "tool": tool_name,
                         "arguments": tool_args,
-                        "result": result
+                        "result": result,
+                        "tool_call_id": tool_call_id
                     }
                     self.tool_call_log.append(log_entry)
                 
@@ -1281,13 +1318,10 @@ ARAÇ KULLANIM KURALLARI:
                         
                         # Onay iste
                         plan = plan_result.get("plan", {})
-                        if self.approval_callback:
-                            approved = self.approval_callback(
-                                tool_name="create_change_plan",
-                                arguments={"file_path": file_path, "problem": problem}
-                            )
-                        else:
-                            approved = False  # Onay callback yoksa güvenli olarak reddet
+                        approved = self._request_approval(
+                            tool_name="create_change_plan",
+                            arguments={"file_path": file_path, "problem": problem}
+                        )
                         
                         if not approved:
                             error_msg = "Değişiklik planı kullanıcı tarafından reddedildi."
@@ -1303,34 +1337,20 @@ ARAÇ KULLANIM KURALLARI:
                         # Değişikliği uygula
                         test_file = self._find_test_file(file_path)
                         
-                        # Test dosyası yoksa, değişikliği testsiz uygula
+                        # Test dosyası yoksa, değişikliği uygulamayı durdur
                         if not test_file:
-                            self.logger.warning(f"Test dosyası bulunamadı: {file_path}, değişiklik testsiz uygulanacak")
-                            # SafeChangeManager test dosyası gerektirir, bu yüzden geçici bir test dosyası oluştur
-                            from pathlib import Path
-                            from app.core.config import PROJECT_ROOT
-                            import os
-                            
-                            # Geçici test dosyası oluştur (project_root'a göre)
-                            file_path_obj = Path(file_path)
-                            relative_parent = file_path_obj.parent
-                            temp_test_name = f"temp_test_{file_path_obj.stem}.py"
-                            temp_test_path = Path(PROJECT_ROOT) / relative_parent / temp_test_name
-                            temp_test_path.parent.mkdir(parents=True, exist_ok=True)
-                            temp_test_path.write_text("# Temporary test file\nprint('Test passed')")
-                            test_file = str(relative_parent / temp_test_name)
+                            error_msg = f"Test dosyası bulunamadı: {file_path}. Değişiklik güvenli olarak uygulanamadı."
+                            self.logger.error(error_msg)
+                            return LoopResult(
+                                success=False,
+                                final_response=error_msg,
+                                iterations=iteration,
+                                tool_calls=self.tool_call_log,
+                                error=error_msg
+                            )
                         
                         apply_result = workflow.apply_change(plan, test_file, approved=True)
                         self.logger.info(f"Apply result: {apply_result}")
-                        
-                        # Geçici test dosyasını temizle
-                        if "temp_test_" in test_file:
-                            try:
-                                temp_test_full = Path(PROJECT_ROOT) / test_file
-                                if temp_test_full.exists():
-                                    os.remove(temp_test_full)
-                            except Exception:
-                                pass
                         
                         if not apply_result.get("success"):
                             error_msg = f"Değişiklik uygulama hatası: {apply_result.get('message', str(apply_result))}"
@@ -1492,11 +1512,13 @@ ARAÇ KULLANIM KURALLARI:
                 f"Maksimum iteration ({self.config.max_iterations}) aşıldı."
             )
             final_response = ai_response if ai_response else "Iteration limiti aşıldı."
-
-        # Inspection-only görev için başarı kontrolü
-        # Hedef dosya modelden önce okunduysa başarılı
-        success = True
-        error = None
+            success = False
+            error = f"Maksimum iteration limiti ({self.config.max_iterations}) aşıldı."
+        else:
+            # Inspection-only görev için başarı kontrolü
+            # Hedef dosya modelden önce okunduysa başarılı
+            success = True
+            error = None
 
         if is_inspection_only_task and target_file_path:
             # Hedef dosya okundu mu kontrol et (ön okuma)

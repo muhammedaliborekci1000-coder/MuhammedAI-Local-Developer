@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MuhammedAI Local Developer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            height: 100vh;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #16213e;
+            border-right: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #0f3460;
+        }
+
+        .sidebar-header h1 {
+            font-size: 18px;
+            color: #e94560;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .project-tree {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .tree-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 2px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tree-item:hover {
+            background: #0f3460;
+        }
+
+        .tree-item.file {
+            color: #4a9eff;
+        }
+
+        .tree-item.directory {
+            color: #ffd700;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            background: #e94560;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .message.assistant {
+            background: #0f3460;
+            align-self: flex-start;
+        }
+
+        .message.system {
+            background: #1a1a2e;
+            color: #888;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .message.error {
+            background: #ff4444;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px;
+            background: #16213e;
+            border: 1px solid #0f3460;
+            border-radius: 8px;
+            color: #eee;
+            font-size: 14px;
+        }
+
+        .input-area input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+
+        .input-area button {
+            padding: 12px 24px;
+            background: #e94560;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .input-area button:hover {
+            background: #ff6b6b;
+        }
+
+        .input-area button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .approval-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .approval-modal.active {
+            display: flex;
+        }
+
+        .approval-content {
+            background: #16213e;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .approval-content h3 {
+            color: #e94560;
+            margin-bottom: 16px;
+        }
+
+        .approval-content pre {
+            background: #0f3460;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 12px 0;
+            font-size: 12px;
+        }
+
+        .approval-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .approval-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .approval-buttons .approve {
+            background: #4caf50;
+            color: white;
+        }
+
+        .approval-buttons .reject {
+            background: #f44336;
+            color: white;
+        }
+
+        .status-bar {
+            padding: 8px 16px;
+            background: #0f3460;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4caf50;
+        }
+
+        .status-dot.connected {
+            background: #4caf50;
+        }
+
+        .status-dot.disconnected {
+            background: #f44336;
+        }
+
+        .status-dot.connecting {
+            background: #ffd700;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>MuhammedAI</h1>
+            <p>Local Developer</p>
+        </div>
+        <div class="project-tree" id="projectTree">
+            <div style="padding: 20px; text-align: center; color: #888;">
+                Proje yapısı yükleniyor...
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="chat-container">
+            <div class="messages" id="messages">
+                <div class="message system">
+                    Bağlantı kuruluyor...
+                </div>
+            </div>
+            <div class="input-area">
+                <input type="text" id="taskInput" placeholder="Görev girin..." disabled>
+                <button id="sendButton" disabled>Gönder</button>
+            </div>
+        </div>
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot connecting" id="statusDot"></div>
+                <span id="statusText">Bağlanıyor...</span>
+            </div>
+            <div id="modelInfo"></div>
+        </div>
+    </div>
+
+    <div class="approval-modal" id="approvalModal">
+        <div class="approval-content">
+            <h3 id="approvalTitle">Onay İsteği</h3>
+            <div id="approvalDetails"></div>
+            <div class="approval-buttons">
+                <button class="reject" onclick="rejectApproval()">Reddet</button>
+                <button class="approve" onclick="approveApproval()">Onayla</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let pendingApproval = null;
+
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8000/ws/chat');
+            
+            ws.onopen = () => {
+                document.getElementById('statusDot').className = 'status-dot connected';
+                document.getElementById('statusText').textContent = 'Bağlı';
+                document.getElementById('taskInput').disabled = false;
+                document.getElementById('sendButton').disabled = false;
+                addMessage('system', 'Bağlantı kuruldu. Görev bekleniyor...');
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+            
+            ws.onclose = () => {
+                document.getElementById('statusDot').className = 'status-dot disconnected';
+                document.getElementById('statusText').textContent = 'Bağlantı kesildi';
+                document.getElementById('taskInput').disabled = true;
+                document.getElementById('sendButton').disabled = true;
+                addMessage('system', 'Bağlantı kesildi. Yeniden bağlanılıyor...');
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket hatası:', error);
+            };
+        }
+
+        function handleWebSocketMessage(data) {
+            switch (data.type) {
+                case 'system':
+                    addMessage('system', data.message);
+                    break;
+                case 'status':
+                    addMessage('system', data.message);
+                    break;
+                case 'result':
+                    addMessage('assistant', data.final_response);
+                    if (data.error) {
+                        addMessage('error', data.error);
+                    }
+                    break;
+                case 'error':
+                    addMessage('error', data.message);
+                    break;
+                case 'approval_request':
+                    showApprovalModal(data);
+                    break;
+            }
+        }
+
+        function addMessage(type, content) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = content;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function showApprovalModal(data) {
+            pendingApproval = data;
+            const modal = document.getElementById('approvalModal');
+            const title = document.getElementById('approvalTitle');
+            const details = document.getElementById('approvalDetails');
+            
+            title.textContent = `Onay İsteği: ${data.tool_name}`;
+            
+            let html = '<p><strong>Argümanlar:</strong></p>';
+            html += '<pre>' + JSON.stringify(data.arguments, null, 2) + '</pre>';
+            
+            if (data.arguments.plan) {
+                const plan = data.arguments.plan;
+                html += '<p><strong>Plan:</strong></p>';
+                html += `<p>Dosya: ${plan.file}</p>`;
+                html += `<p>Fonksiyon: ${plan.function}</p>`;
+                html += `<p>Problem: ${plan.problem}</p>`;
+                html += '<p><strong>Eski kod:</strong></p>';
+                html += '<pre>' + plan.old_code + '</pre>';
+                html += '<p><strong>Yeni kod:</strong></p>';
+                html += '<pre>' + plan.new_code + '</pre>';
+            }
+            
+            details.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function approveApproval() {
+            if (pendingApproval && ws) {
+                ws.send(JSON.stringify({
+                    type: 'approval_response',
+                    approved: true
+                }));
+            }
+            hideApprovalModal();
+        }
+
+        function rejectApproval() {
+            if (pendingApproval && ws) {
+                ws.send(JSON.stringify({
+                    type: 'approval_response',
+                    approved: false
+                }));
+            }
+            hideApprovalModal();
+        }
+
+        function hideApprovalModal() {
+            document.getElementById('approvalModal').classList.remove('active');
+            pendingApproval = null;
+        }
+
+        function sendTask() {
+            const input = document.getElementById('taskInput');
+            const task = input.value.trim();
+            
+            if (task && ws) {
+                addMessage('user', task);
+                ws.send(JSON.stringify({
+                    type: 'task',
+                    task: task
+                }));
+                input.value = '';
+            }
+        }
+
+        document.getElementById('sendButton').addEventListener('click', sendTask);
+        document.getElementById('taskInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendTask();
+            }
+        });
+
+        // Proje yapısını yükle
+        async function loadProjectStructure() {
+            try {
+                const response = await fetch('/api/project/structure');
+                const data = await response.json();
+                renderProjectTree(data);
+            } catch (error) {
+                console.error('Proje yapısı yüklenemedi:', error);
+            }
+        }
+
+        function renderProjectTree(data) {
+            const treeDiv = document.getElementById('projectTree');
+            // Basit render - geliştirilebilir
+            treeDiv.innerHTML = '<p style="padding: 10px; color: #888;">Proje yapısı</p>';
+        }
+
+        // Başlat
+        connectWebSocket();
+        loadProjectStructure();
+    </script>
+</body>
+</html>

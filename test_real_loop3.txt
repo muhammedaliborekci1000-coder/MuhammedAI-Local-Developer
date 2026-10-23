@@ -1,0 +1,54 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 1 item
+
+quality_tests/test_correction_loop.py::test_correction_real_loop 
+======================================================================
+TEST A2 ÔÇö Ger├ğek Correction Loop
+======================================================================
+
+Calculator dosyas─▒: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace\calculator.py
+Test dosyas─▒: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace\test_calculator.py
+Orijinal kod:
+def add(a, b):
+    return a - b
+
+
+G├Ârev: L├╝tfen quality_tests\correction_workspace\calculator.py dosyas─▒ndaki add fonksiyonunu d├╝zeltin.
+┼Şu anda return a - b yap─▒yor ama return a + b olmal─▒.
+quality_tests\correction_workspace\test_calculator.py test dosyas─▒n─▒ kullanarak de─şi┼şikli─şi do─şrulay─▒n.
+----------------------------------------------------------------------
+Approval: apply_change -> APPROVED
+
+AgentLoop sonucu:
+Success: True
+Error: None
+Iterations: 5
+Tool calls: 4
+
+Son kod:
+def add(a, b):
+    return a + b
+
+
+Tekrar test sonucu:
+Success: True
+Returncode: 0
+Stdout: 
+Stderr: 
+
+Not: Agent ilk denemede ba┼şar─▒l─▒ oldu, correction loop ba┼şlamad─▒.
+Bu normal bir durum - agent kodu ilk denemede d├╝zeltti.
+
+======================================================================
+TEST A2: PASS
+======================================================================
+
+Workspace temizlendi: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\correction_workspace
+PASSED
+
+======================== 1 passed in 263.86s (0:04:23) ========================

@@ -1,0 +1,108 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 3 items
+
+quality_tests/test_correction_loop_unit.py::test_correction_fail_then_success_unit 
+======================================================================
+TEST A ÔÇö Fail then Success (Unit)
+======================================================================
+Mock AgentLoop.run ├ğa─şr─▒ld─▒
+Mock chat ├ğa─şr─▒ld─▒ - dummy yan─▒t
+Mock parse (count=1)
+  -> read_file
+Mock chat ├ğa─şr─▒ld─▒ - dummy yan─▒t
+Mock parse (count=2)
+  -> create_change_plan (ilk)
+Mock chat ├ğa─şr─▒ld─▒ - dummy yan─▒t
+Mock parse (count=3)
+  -> apply_change (ilk)
+Mock chat ├ğa─şr─▒ld─▒ - dummy yan─▒t
+Mock parse (count=4)
+  -> create_change_plan (correction)
+Mock chat ├ğa─şr─▒ld─▒ - dummy yan─▒t
+Mock parse (count=5)
+  -> apply_change (correction)
+Mock chat ├ğa─şr─▒ld─▒ - dummy yan─▒t
+Mock parse (count=6)
+  -> no tool calls
+
+Sonu├ğ:
+Success: True
+Approval count: 0
+Parse count: 6
+Execute count: 0
+Correction attempt: 1
+Correction history length: 2
+Ô£ô Correction loop ba┼şlat─▒ld─▒.
+Ô£ô Correction history dolu.
+
+Correction history:
+  Attempt 1: success=False, approval=approved
+  Attempt 2: success=True, approval=approved
+Ô£ô ─░lk deneme ba┼şar─▒s─▒z.
+Ô£ô Son deneme ba┼şar─▒l─▒.
+Ô£ô Sonu├ğ ba┼şar─▒l─▒.
+Ô£ô Son kod do─şru.
+
+======================================================================
+TEST A: PASS
+======================================================================
+PASSED
+quality_tests/test_correction_loop_unit.py::test_correction_approval_rejected_unit 
+======================================================================
+TEST B ÔÇö Approval Rejected (Unit)
+======================================================================
+Mock AgentLoop.run ├ğa─şr─▒ld─▒
+Approval: apply_change -> APPROVED
+Approval: apply_change -> REJECTED
+
+Sonu├ğ:
+Success: False
+Approval count: 2
+Correction attempt: 1
+Correction history length: 2
+Ô£ô Correction loop ba┼şlat─▒ld─▒.
+Ô£ô Approval 2 kez ├ğa─şr─▒ld─▒.
+
+Correction history:
+  Attempt 1: approval=approved, success=False
+  Attempt 2: approval=rejected, success=False
+Ô£ô ─░lk plan onayland─▒, correction plan─▒ reddedildi.
+Ô£ô Dosya de─şi┼ştirilmedi.
+
+======================================================================
+TEST B: PASS
+======================================================================
+PASSED
+quality_tests/test_correction_loop_unit.py::test_correction_max_attempts_unit 
+======================================================================
+TEST C ÔÇö Max Attempts (Unit)
+======================================================================
+Mock AgentLoop.run ├ğa─şr─▒ld─▒
+
+Sonu├ğ:
+Success: False
+Approval count: 0
+Correction attempt: 3
+Correction history length: 3
+Ô£ô Correction loop ba┼şlat─▒ld─▒.
+Ô£ô Max attempts s─▒n─▒r─▒na uyuldu: 3/3
+
+Correction history:
+  Attempt 1: success=False, approval=approved
+  Attempt 2: success=False, approval=approved
+  Attempt 3: success=False, approval=approved
+Ô£ô Correction history length do─şru.
+Ô£ô max_attempts_reached flag bulundu
+Ô£ô Dosya rollback yap─▒ld─▒.
+
+======================================================================
+TEST C: PASS
+======================================================================
+PASSED
+
+============================== 3 passed in 0.56s ==============================

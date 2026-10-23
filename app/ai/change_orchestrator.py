@@ -157,21 +157,44 @@ class ChangeOrchestrator:
         
         try:
             # Callback'i çağır
-            approved = self.approval_callback(
+            result = self.approval_callback(
                 "apply_change",
                 {"plan": self._current_plan}
             )
             
-            self._approval_result = approved
+            # Awaitable kontrolü - async callback senkron çağrıldıysa
+            import inspect
+            if inspect.isawaitable(result):
+                # Coroutine ise kapat (RuntimeWarning önlemek için)
+                if inspect.iscoroutine(result):
+                    result.close()
+                self.logger.error(
+                    "Onay callback awaitable döndürdü (async callback senkron çağrıldı). "
+                    "İşlem reddedildi."
+                )
+                self._state = OrchestratorState.REJECTED
+                self._approval_result = False
+                return False
             
-            if approved:
+            # Sonucun gerçek bool olduğunu kontrol et
+            if not isinstance(result, bool):
+                self.logger.error(
+                    f"Onay callback bool döndürmedi: {type(result)}. İşlem reddedildi."
+                )
+                self._state = OrchestratorState.REJECTED
+                self._approval_result = False
+                return False
+            
+            self._approval_result = result
+            
+            if result:
                 self._state = OrchestratorState.APPLY
                 self.logger.info("Kullanıcı onayı verildi. Durum: APPLY")
             else:
                 self._state = OrchestratorState.REJECTED
                 self.logger.info("Kullanıcı onayı reddedildi. Durum: REJECTED")
             
-            return approved
+            return result
             
         except Exception as exc:
             self.logger.error(f"Onay callback hatası: {exc}")

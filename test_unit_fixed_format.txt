@@ -1,0 +1,588 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 3 items
+
+quality_tests/test_correction_loop_unit.py::test_correction_fail_then_success_unit 
+======================================================================
+TEST A ÔÇö Fail then Success (Unit)
+======================================================================
+Mock chat (count=1)
+Mock parse (count=1)
+Mock chat (count=2)
+Mock parse (count=2)
+Mock chat (count=3)
+Mock parse (count=3)
+Mock chat (count=4)
+Mock parse (count=4)
+
+Sonu├ğ:
+Success: True
+Approval count: 0
+Chat call count: 4
+Execute count: 0
+Apply count: 0
+Correction attempt: 0
+Correction history length: 0
+FAILED
+quality_tests/test_correction_loop_unit.py::test_correction_approval_rejected_unit 
+======================================================================
+TEST B ÔÇö Approval Rejected (Unit)
+======================================================================
+Mock chat (count=1)
+Mock parse (count=1)
+Mock chat (count=2)
+Mock parse (count=2)
+Mock chat (count=3)
+Mock parse (count=3)
+
+Sonu├ğ:
+Success: True
+Approval count: 0
+Correction attempt: 0
+Correction history length: 0
+FAILED
+quality_tests/test_correction_loop_unit.py::test_correction_max_attempts_unit 
+======================================================================
+TEST C ÔÇö Max Attempts (Unit)
+======================================================================
+Mock chat (count=1)
+Mock parse (count=1)
+Mock chat (count=2)
+Mock parse (count=2)
+Mock chat (count=3)
+Mock parse (count=3)
+Mock chat (count=4)
+Mock parse (count=4)
+Mock chat (count=5)
+Mock parse (count=5)
+Mock chat (count=6)
+Mock parse (count=6)
+
+Sonu├ğ:
+Success: True
+Correction attempt: 0
+Correction history length: 0
+FAILED
+
+================================== FAILURES ===================================
+___________________ test_correction_fail_then_success_unit ____________________
+
+workspace = WindowsPath('C:/Users/N─░TRO16/Desktop/MuhammedAI-Local-Developer/quality_tests/correction_workspace')
+
+    def test_correction_fail_then_success_unit(workspace):
+        """
+        TEST A ÔÇö Fail then success (Unit Test)
+        Ger├ğek AgentLoop.run() kullanarak correction loop testi.
+        ─░lk plan ba┼şar─▒s─▒z, ikinci plan ba┼şar─▒l─▒ olur.
+        """
+        print("\n" + "=" * 70)
+        print("TEST A ÔÇö Fail then Success (Unit)")
+        print("=" * 70)
+    
+        calculator_file = workspace / "calculator.py"
+        original_code = 'def add(a, b):\n    return a - b\n'
+        with open(calculator_file, 'w', encoding='utf-8') as f:
+            f.write(original_code)
+    
+        test_file = workspace / "test_calculator.py"
+        test_code = '''
+    def test_add():
+        assert add(2, 3) == 5
+    '''
+        with open(test_file, 'w', encoding='utf-8') as f:
+            f.write(test_code)
+    
+        relative_calc = str(calculator_file.relative_to(PROJECT_ROOT))
+        relative_test = str(test_file.relative_to(PROJECT_ROOT))
+    
+        ollama_client = OllamaClient()
+        tool_registry = ToolRegistry()
+        config = LoopConfig(
+            max_iterations=20,
+            max_correction_attempts=3,
+            enable_logging=False
+        )
+    
+        approval_count = [0]
+        def approval_callback(tool_name, arguments):
+            approval_count[0] += 1
+            print(f"Approval: {tool_name} -> APPROVED")
+            return True
+    
+        agent_loop = AgentLoop(
+            ollama_client=ollama_client,
+            tool_registry=tool_registry,
+            config=config,
+            approval_callback=approval_callback
+        )
+    
+        # OllamaClient.chat mock - dummy yan─▒t d├Ând├╝r
+        chat_call_count = [0]
+        def mock_chat(self, message, response_format=None):
+            chat_call_count[0] += 1
+            print(f"Mock chat (count={chat_call_count[0]})")
+            return "Processing request..."
+    
+        # ToolParser.parse mock - kontroll├╝ ToolCall nesneleri d├Ând├╝r
+        parse_count = [0]
+        def mock_parse(self, ai_response):
+            parse_count[0] += 1
+            print(f"Mock parse (count={parse_count[0]})")
+    
+            if parse_count[0] == 1:
+                return ParseResult(
+                    success=True,
+                    tool_calls=[
+                        ToolCall(
+                            name="read_file",
+                            arguments={"file_path": relative_calc},
+                            raw_text='read_file'
+                        )
+                    ],
+                    raw_response=ai_response
+                )
+            elif parse_count[0] == 2:
+                return ParseResult(
+                    success=True,
+                    tool_calls=[
+                        ToolCall(
+                            name="create_change_plan",
+                            arguments={
+                                "file_path": relative_calc,
+                                "problem": "add function returns a - b instead of a + b",
+                                "test_file": relative_test
+                            },
+                            raw_text='create_change_plan'
+                        )
+                    ],
+                    raw_response=ai_response
+                )
+            elif parse_count[0] == 3:
+                return ParseResult(
+                    success=True,
+                    tool_calls=[
+                        ToolCall(
+                            name="create_change_plan",
+                            arguments={
+                                "file_path": relative_calc,
+                                "problem": "add function returns a - b instead of a + b",
+                                "test_file": relative_test
+                            },
+                            raw_text='create_change_plan correction'
+                        )
+                    ],
+                    raw_response=ai_response
+                )
+            else:
+                return ParseResult(success=True, tool_calls=[], raw_response=ai_response)
+    
+        # ToolRegistry.execute mock - kontroll├╝ sonu├ğlar d├Ând├╝r
+        execute_count = [0]
+        original_execute = tool_registry.execute
+        def mock_execute(name, arguments, approved=False):
+            execute_count[0] += 1
+            print(f"Mock execute (count={execute_count[0]}, tool={name})")
+    
+            if name == "read_file":
+                with open(calculator_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                return {"success": True, "content": content, "file_path": arguments.get("file_path")}
+    
+            elif name == "create_change_plan":
+                file_path = arguments.get("file_path", relative_calc)
+                with open(calculator_file, 'r', encoding='utf-8') as f:
+                    current_content = f.read()
+    
+                plan = {
+                    "file": file_path,
+                    "old_code": current_content,
+                    "new_code": 'def add(a, b):\n    return a + b\n',
+                    "reason": "Fix add function to return a + b instead of a - b"
+                }
+    
+                return {
+                    "success": True,
+                    "result": {
+                        "plan": plan,
+                        "validation": {"valid": True, "errors": []}
+                    },
+                    "plan": plan,
+                    "validation": {"valid": True, "errors": []}
+                }
+    
+            else:
+                return original_execute(name, arguments, approved)
+    
+        # SafeChangeManager.apply_patch_and_test mock - test sonu├ğlar─▒n─▒ kontrol et
+        apply_count = [0]
+        from app.tools.safe_change_manager import SafeChangeManager
+        original_apply = SafeChangeManager.apply_patch_and_test
+        def mock_apply_patch_and_test(self, file_path, old_code, new_code, test_file):
+            apply_count[0] += 1
+            print(f"Mock apply_patch_and_test (count={apply_count[0]})")
+    
+            if apply_count[0] == 1:
+                # ─░lk ├ğa─şr─▒da ba┼şar─▒s─▒z d├Ând├╝r (correction loop tetiklenmeli)
+                print("  -> ba┼şar─▒s─▒z d├Ând├╝r├╝l├╝yor")
+                result = original_apply(self, file_path, old_code, new_code, test_file)
+                result["success"] = False
+                result["test"] = {"success": False}
+                result["test_failure_details"] = {
+                    "stdout": "",
+                    "stderr": "AssertionError: assert add(2, 3) == 5",
+                    "returncode": 1,
+                    "error": "Test failed"
+                }
+                return result
+            else:
+                # ─░kinci ├ğa─şr─▒da ba┼şar─▒l─▒ d├Ând├╝r
+                print("  -> ba┼şar─▒l─▒ d├Ând├╝r├╝l├╝yor")
+                return original_apply(self, file_path, old_code, new_code, test_file)
+    
+        with patch.object(OllamaClient, 'chat', mock_chat):
+            with patch.object(ToolParser, 'parse', mock_parse):
+                with patch.object(tool_registry, 'execute', mock_execute):
+                    with patch.object(SafeChangeManager, 'apply_patch_and_test', mock_apply_patch_and_test):
+                        user_task = f"Fix the add function in {relative_calc}. The function currently returns a - b but should return a + b. Use apply_change tool with {relative_test} to verify."
+                        result = agent_loop.run(user_task)
+    
+        print(f"\nSonu├ğ:")
+        print(f"Success: {result.success}")
+        print(f"Approval count: {approval_count[0]}")
+        print(f"Chat call count: {chat_call_count[0]}")
+        print(f"Execute count: {execute_count[0]}")
+        print(f"Apply count: {apply_count[0]}")
+        print(f"Correction attempt: {agent_loop._correction_attempt}")
+        print(f"Correction history length: {len(agent_loop._correction_history)}")
+    
+>       assert agent_loop._correction_attempt > 0, "Correction loop ba┼şlat─▒lmad─▒"
+E       AssertionError: Correction loop ba┼şlat─▒lmad─▒
+E       assert 0 > 0
+E        +  where 0 = <app.ai.agent_loop.AgentLoop object at 0x000002662A4CE510>._correction_attempt
+
+quality_tests\test_correction_loop_unit.py:223: AssertionError
+___________________ test_correction_approval_rejected_unit ____________________
+
+workspace = WindowsPath('C:/Users/N─░TRO16/Desktop/MuhammedAI-Local-Developer/quality_tests/correction_workspace')
+
+    def test_correction_approval_rejected_unit(workspace):
+        """
+        TEST B ÔÇö Approval Rejected (Unit Test)
+        Onay callback'i manip├╝le ederek reddedilme senaryosu.
+        """
+        print("\n" + "=" * 70)
+        print("TEST B ÔÇö Approval Rejected (Unit)")
+        print("=" * 70)
+    
+        calculator_file = workspace / "calculator.py"
+        original_code = 'def add(a, b):\n    return a - b\n'
+        with open(calculator_file, 'w', encoding='utf-8') as f:
+            f.write(original_code)
+    
+        test_file = workspace / "test_calculator.py"
+        test_code = '''
+    def test_add():
+        assert add(2, 3) == 5
+    '''
+        with open(test_file, 'w', encoding='utf-8') as f:
+            f.write(test_code)
+    
+        relative_calc = str(calculator_file.relative_to(PROJECT_ROOT))
+        relative_test = str(test_file.relative_to(PROJECT_ROOT))
+    
+        ollama_client = OllamaClient()
+        tool_registry = ToolRegistry()
+        config = LoopConfig(
+            max_iterations=20,
+            max_correction_attempts=3,
+            enable_logging=False
+        )
+    
+        approval_count = [0]
+        def approval_callback(tool_name, arguments):
+            approval_count[0] += 1
+            if tool_name == "apply_change" and approval_count[0] == 2:
+                print(f"Approval: {tool_name} -> REJECTED")
+                return False
+            print(f"Approval: {tool_name} -> APPROVED")
+            return True
+    
+        agent_loop = AgentLoop(
+            ollama_client=ollama_client,
+            tool_registry=tool_registry,
+            config=config,
+            approval_callback=approval_callback
+        )
+    
+        # OllamaClient.chat mock
+        chat_call_count = [0]
+        def mock_chat(self, message, response_format=None):
+            chat_call_count[0] += 1
+            print(f"Mock chat (count={chat_call_count[0]})")
+            return "Processing request..."
+    
+        # ToolParser.parse mock
+        parse_count = [0]
+        def mock_parse(self, ai_response):
+            parse_count[0] += 1
+            print(f"Mock parse (count={parse_count[0]})")
+    
+            if parse_count[0] == 1:
+                return ParseResult(
+                    success=True,
+                    tool_calls=[
+                        ToolCall(
+                            name="read_file",
+                            arguments={"file_path": relative_calc},
+                            raw_text='read_file'
+                        )
+                    ],
+                    raw_response=ai_response
+                )
+            elif parse_count[0] == 2:
+                return ParseResult(
+                    success=True,
+                    tool_calls=[
+                        ToolCall(
+                            name="create_change_plan",
+                            arguments={
+                                "file_path": relative_calc,
+                                "problem": "add function returns a - b instead of a + b",
+                                "test_file": relative_test
+                            },
+                            raw_text='create_change_plan'
+                        )
+                    ],
+                    raw_response=ai_response
+                )
+            else:
+                return ParseResult(success=True, tool_calls=[], raw_response=ai_response)
+    
+        # ToolRegistry.execute mock
+        execute_count = [0]
+        original_execute = tool_registry.execute
+        def mock_execute(name, arguments, approved=False):
+            execute_count[0] += 1
+            print(f"Mock execute (count={execute_count[0]}, tool={name})")
+    
+            if name == "read_file":
+                with open(calculator_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                return {"success": True, "content": content, "file_path": arguments.get("file_path")}
+    
+            elif name == "create_change_plan":
+                file_path = arguments.get("file_path", relative_calc)
+                with open(calculator_file, 'r', encoding='utf-8') as f:
+                    current_content = f.read()
+    
+                plan = {
+                    "file": file_path,
+                    "old_code": current_content,
+                    "new_code": 'def add(a, b):\n    return a + b\n',
+                    "reason": "Fix add function"
+                }
+    
+                return {
+                    "success": True,
+                    "result": {
+                        "plan": plan,
+                        "validation": {"valid": True, "errors": []}
+                    },
+                    "plan": plan,
+                    "validation": {"valid": True, "errors": []}
+                }
+    
+            else:
+                return original_execute(name, arguments, approved)
+    
+        with patch.object(OllamaClient, 'chat', mock_chat):
+            with patch.object(ToolParser, 'parse', mock_parse):
+                with patch.object(tool_registry, 'execute', mock_execute):
+                    user_task = f"Fix the add function in {relative_calc}. The function currently returns a - b but should return a + b. Use apply_change tool with {relative_test} to verify."
+                    result = agent_loop.run(user_task)
+    
+        print(f"\nSonu├ğ:")
+        print(f"Success: {result.success}")
+        print(f"Approval count: {approval_count[0]}")
+        print(f"Correction attempt: {agent_loop._correction_attempt}")
+        print(f"Correction history length: {len(agent_loop._correction_history)}")
+    
+>       assert approval_count[0] == 2, f"Approval count yanl─▒┼ş: {approval_count[0]} (beklenen: 2)"
+E       AssertionError: Approval count yanl─▒┼ş: 0 (beklenen: 2)
+E       assert 0 == 2
+
+quality_tests\test_correction_loop_unit.py:398: AssertionError
+______________________ test_correction_max_attempts_unit ______________________
+
+workspace = WindowsPath('C:/Users/N─░TRO16/Desktop/MuhammedAI-Local-Developer/quality_tests/correction_workspace')
+
+    def test_correction_max_attempts_unit(workspace):
+        """
+        TEST C ÔÇö Max Attempts (Unit Test)
+        Maksimum deneme s─▒n─▒r─▒ mant─▒─ş─▒n─▒ do─şrular.
+        """
+        print("\n" + "=" * 70)
+        print("TEST C ÔÇö Max Attempts (Unit)")
+        print("=" * 70)
+    
+        calculator_file = workspace / "calculator.py"
+        original_code = 'def add(a, b):\n    return a - b\n'
+        with open(calculator_file, 'w', encoding='utf-8') as f:
+            f.write(original_code)
+    
+        test_file = workspace / "test_calculator.py"
+        test_code = '''
+    def test_add():
+        assert add(2, 3) == 5
+    '''
+        with open(test_file, 'w', encoding='utf-8') as f:
+            f.write(test_code)
+    
+        relative_calc = str(calculator_file.relative_to(PROJECT_ROOT))
+        relative_test = str(test_file.relative_to(PROJECT_ROOT))
+    
+        ollama_client = OllamaClient()
+        tool_registry = ToolRegistry()
+        config = LoopConfig(
+            max_iterations=20,
+            max_correction_attempts=3,
+            enable_logging=False
+        )
+    
+        approval_count = [0]
+        def approval_callback(tool_name, arguments):
+            approval_count[0] += 1
+            print(f"Approval: {tool_name} -> APPROVED")
+            return True
+    
+        agent_loop = AgentLoop(
+            ollama_client=ollama_client,
+            tool_registry=tool_registry,
+            config=config,
+            approval_callback=approval_callback
+        )
+    
+        # OllamaClient.chat mock - dummy yan─▒t d├Ând├╝r
+        chat_call_count = [0]
+        def mock_chat(self, message, response_format=None):
+            chat_call_count[0] += 1
+            print(f"Mock chat (count={chat_call_count[0]})")
+            return "Processing request..."
+    
+        # ToolParser.parse mock - her zaman create_change_plan d├Ând├╝r
+        parse_count = [0]
+        def mock_parse(self, ai_response):
+            parse_count[0] += 1
+            print(f"Mock parse (count={parse_count[0]})")
+    
+            if parse_count[0] == 1:
+                return ParseResult(
+                    success=True,
+                    tool_calls=[
+                        ToolCall(
+                            name="read_file",
+                            arguments={"file_path": relative_calc},
+                            raw_text='read_file'
+                        )
+                    ],
+                    raw_response=ai_response
+                )
+            elif parse_count[0] <= 5:
+                return ParseResult(
+                    success=True,
+                    tool_calls=[
+                        ToolCall(
+                            name="create_change_plan",
+                            arguments={
+                                "file_path": relative_calc,
+                                "problem": "add function returns a - b instead of a + b",
+                                "test_file": relative_test
+                            },
+                            raw_text='create_change_plan'
+                        )
+                    ],
+                    raw_response=ai_response
+                )
+            else:
+                return ParseResult(success=True, tool_calls=[], raw_response=ai_response)
+    
+        # ToolRegistry.execute mock
+        execute_count = [0]
+        original_execute = tool_registry.execute
+        def mock_execute(name, arguments, approved=False):
+            execute_count[0] += 1
+            print(f"Mock execute (count={execute_count[0]}, tool={name})")
+    
+            if name == "read_file":
+                with open(calculator_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                return {"success": True, "content": content, "file_path": arguments.get("file_path")}
+    
+            elif name == "create_change_plan":
+                file_path = arguments.get("file_path", relative_calc)
+                with open(calculator_file, 'r', encoding='utf-8') as f:
+                    current_content = f.read()
+    
+                plan = {
+                    "file": file_path,
+                    "old_code": current_content,
+                    "new_code": 'def add(a, b):\n    return a + b\n',
+                    "reason": "Fix add function"
+                }
+    
+                return {
+                    "success": True,
+                    "result": {
+                        "plan": plan,
+                        "validation": {"valid": True, "errors": []}
+                    },
+                    "plan": plan,
+                    "validation": {"valid": True, "errors": []}
+                }
+    
+            else:
+                return original_execute(name, arguments, approved)
+    
+        # SafeChangeManager.apply_patch_and_test mock - her zaman ba┼şar─▒s─▒z d├Ând├╝r
+        from app.tools.safe_change_manager import SafeChangeManager
+        original_apply = SafeChangeManager.apply_patch_and_test
+        def mock_apply_patch_and_test(self, file_path, old_code, new_code, test_file):
+            print("Mock apply_patch_and_test -> her zaman ba┼şar─▒s─▒z")
+            result = original_apply(self, file_path, old_code, new_code, test_file)
+            result["success"] = False
+            result["test"] = {"success": False}
+            result["test_failure_details"] = {
+                "stdout": "",
+                "stderr": "AssertionError: assert add(2, 3) == 5",
+                "returncode": 1,
+                "error": "Test failed"
+            }
+            return result
+    
+        with patch.object(OllamaClient, 'chat', mock_chat):
+            with patch.object(ToolParser, 'parse', mock_parse):
+                with patch.object(tool_registry, 'execute', mock_execute):
+                    with patch.object(SafeChangeManager, 'apply_patch_and_test', mock_apply_patch_and_test):
+                        user_task = f"Fix the add function in {relative_calc}. The function currently returns a - b but should return a + b. Use apply_change tool with {relative_test} to verify."
+                        result = agent_loop.run(user_task)
+    
+        print(f"\nSonu├ğ:")
+        print(f"Success: {result.success}")
+        print(f"Correction attempt: {agent_loop._correction_attempt}")
+        print(f"Correction history length: {len(agent_loop._correction_history)}")
+    
+>       assert agent_loop._correction_attempt > 0, "Correction loop ba┼şlat─▒lmad─▒"
+E       AssertionError: Correction loop ba┼şlat─▒lmad─▒
+E       assert 0 > 0
+E        +  where 0 = <app.ai.agent_loop.AgentLoop object at 0x000002662A66D6D0>._correction_attempt
+
+quality_tests\test_correction_loop_unit.py:576: AssertionError
+=========================== short test summary info ===========================
+FAILED quality_tests/test_correction_loop_unit.py::test_correction_fail_then_success_unit
+FAILED quality_tests/test_correction_loop_unit.py::test_correction_approval_rejected_unit
+FAILED quality_tests/test_correction_loop_unit.py::test_correction_max_attempts_unit
+============================== 3 failed in 0.86s ==============================

@@ -1,0 +1,31 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\N─░TRO16\AppData\Local\Python\pythoncore-3.14-64\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer
+configfile: pytest.ini
+plugins: anyio-4.15.1, langsmith-0.12.4
+collecting ... collected 1 item
+
+quality_tests/test_agent_core_real_qwen3.py::test_agent_core_real_qwen3 
+======================================================================
+AGENT CORE REAL QWEN3 TEST
+======================================================================
+
+G├Ârev: quality_tests\agent_core_workspace\simple_test.py dosyas─▒n─▒ oku ve i├ğeri─şini g├Âster.
+----------------------------------------------------------------------
+
+AgentLoop sonucu:
+Success: True
+Error: None
+Iterations: 2
+Tool calls: 1
+Session olu┼şturulmad─▒ - bu beklenen bir durum olabilir
+
+======================================================================
+AGENT CORE REAL QWEN3 TEST: PASS
+======================================================================
+
+Workspace temizlendi: C:\Users\N─░TRO16\Desktop\MuhammedAI-Local-Developer\quality_tests\agent_core_workspace
+PASSED
+
+============================= 1 passed in 45.61s ==============================
